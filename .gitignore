@@ -33,3 +33,6 @@ Thumbs.db
 .vercel/
 coverage/
 supabase/.temp/
+
+# scanner output generated beside the scanner script
+sentinelapi/scanner/findings.json
