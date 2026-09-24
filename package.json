@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:backend": "tsc -p sentinelapi/backend/tsconfig.build.json",
-    "build:railway": "npm ci && npm ci --prefix sentinelapi/backend && npm run build && npm run build:backend",
+    "build:railway": "npm ci --include=dev --prefix sentinelapi/backend && npm run build && npm run build:backend",
     "start": "next start",
     "start:railway": "node scripts/start-railway.mjs",
     "lint": "next lint"
