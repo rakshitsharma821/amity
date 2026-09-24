@@ -1,8 +1,10 @@
 # SentinelAPI: Zero-Trust API Vulnerability Scanner (24h Hackathon MVP)
 
+> **Backend MVP:** The current TypeScript REST service, SQLite storage, real-response scan pipeline, and reproducible local demo are documented in [`backend/README.md`](backend/README.md). Start there for the hackathon backend workflow. The Python CLI described below remains available as a legacy standalone scanner.
+
 SentinelAPI is an automated, zero-trust API vulnerability scanner designed to detect critical authorization flaws and data leaks in modern REST APIs described by OpenAPI 3.0 specifications.
 
-Built entirely with **zero external dependencies** (Node.js built-ins for the target sandbox, Python 3 standard library for the scanner engine, and vanilla HTML5/JS for the dashboard), SentinelAPI provides high-precision security audits with zero installation friction.
+The legacy sandbox and Python CLI use built-in runtimes. The new TypeScript backend has its own Express, Zod, YAML, and TypeScript dependencies; see [`backend/README.md`](backend/README.md) for its setup and verified capabilities.
 
 ---
 
@@ -86,39 +88,9 @@ xdg-open sentinelapi/dashboard/index.html
 
 ---
 
-## 📊 Expected Scan Output (Demo Sandbox)
+## Legacy CLI output
 
-Running the scanner against the seeded vulnerable API consistently reports **exactly 5 distinct, template-level findings**:
-
-```text
-=================================================================
-  [SENTINEL-API] Zero-Trust API Vulnerability Scanner
-=================================================================
-[*] Target Base URL: http://localhost:4000
-[*] Fetching and parsing OpenAPI 3.0 specification...
-    [+] Loaded spec: 'SentinelAPI Vulnerable Test Target' (v1.0.0) with 5 paths
-[*] Authenticating test user identities...
-    [+] user_a: Authenticated (Bearer eyJ...[redacted])
-    [+] user_b: Authenticated (Bearer eyJ...[redacted])
-
-[*] Commencing vulnerability assessments...
-
-[+] Scan complete in 0.35s. Report written to: sentinelapi/findings.json
-
-----------------------------------------
-  Summary: 5 findings discovered
-  High:   4
-  Medium: 1
-  Low:    0
-----------------------------------------
-1. [HIGH] Broken Object Level Authorization (BOLA) in /orders/{id} (GET /orders/{id})
-2. [HIGH] Broken Object Level Authorization (BOLA) in /users/{id} (GET /users/{id})
-3. [HIGH] Excessive Data Exposure: Unmasked Payment Card Data in /orders/{id} (GET /orders/{id})
-4. [HIGH] Excessive Data Exposure: Plaintext Password Leak in /users/{id} (GET /users/{id})
-5. [MEDIUM] Missing Rate Limiting on Authentication Endpoint (/login) (POST /login)
-
-[+] Scan finished successfully.
-```
+The Python CLI remains available for its smaller BOLA, sensitive-field, and rate-limit checks. Its output depends on the live OpenAPI paths and the IDs configured for each test identity. The checked-in `findings.json` is a prior sample report, not a live scan or a guarantee of current results. Use the TypeScript backend flow in [`backend/README.md`](backend/README.md) for the current evidence-backed BOLA, downstream attack-path, impact, BFLA, mass-assignment, and bounded rate-limit demo.
 
 ---
 

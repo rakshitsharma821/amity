@@ -1,0 +1,16 @@
+{
+  "name": "SentinelAPI Local Vulnerable Demo",
+  "baseUrl": "http://127.0.0.1:4000",
+  "openApiUrl": "http://127.0.0.1:4000/openapi.json",
+  "sandboxMode": true,
+  "demoSandbox": true,
+  "authorized": false,
+  "allowDestructiveTests": true,
+  "loginPath": "/login",
+  "tokenJsonPath": "token",
+  "tokenPrefix": "Bearer ",
+  "identities": [
+    { "id": "1", "username": "alice", "role": "customer", "credentials": { "username": "alice", "password": "alice123" }, "ownedResources": { "user": ["1"], "order": ["1", "2"] } },
+    { "id": "2", "username": "bob", "role": "customer", "credentials": { "username": "bob", "password": "bob123" }, "ownedResources": { "user": ["2"], "order": ["3", "4"] } }
+  ]
+}

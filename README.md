@@ -120,19 +120,16 @@ npm install
 ```
 
 ### 2. Environment Variables
-Copy `.env.example` to `.env.local`:
-```bash
-cp .env.example .env.local
-```
-
-Fill in your Supabase credentials:
+Supabase is optional for the local judge demo. To use auth, configure:
 ```env
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-SCANNER_API_URL=http://localhost:8000
+SCANNER_API_URL=http://127.0.0.1:5000
 ```
+
+`SCANNER_API_URL` points to the local Express backend. The Next.js server proxies browser requests to it through `/api/sentinel/*`; the browser does not connect to the scanner directly.
 
 ### 3. Initialize Supabase Database
 In your Supabase project's SQL Editor, execute the contents of [`supabase/schema.sql`](file:///d:/amity%20project/supabase/schema.sql). This will provision:
@@ -149,19 +146,36 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
 
-## Standalone CLI Scanner & Vulnerability Sandbox
+## Judge Demo: Real Frontend + Backend + Vulnerable Sandbox
 
-SentinelAPI includes an air-gapped, zero-external-dependency security sandbox located in [`sentinelapi/`](file:///d:/amity%20project/sentinelapi/):
+Use Node.js 22.13 or newer. Start these in three terminals from the repository root:
+
+```bash
+node sentinelapi/vulnerable-api/server.js
+```
+
+```bash
+cd sentinelapi/backend
+npm install
+npm run dev
+```
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000/dashboard](http://localhost:3000/dashboard) and click **Launch Demo**. The frontend creates/selects the loopback target, resets the sandbox, sends the Alice/Bob test credentials only with the scan request, and displays backend status, findings, evidence, the authorization graph, attack paths, impact, PoC, and remediation. The local demo is deliberately vulnerable; keep it bound to loopback. Custom remote targets are accepted only when the backend operator configures the hostname allowlist.
+
+## Local Scanner Backend & Vulnerability Sandbox
+
+SentinelAPI includes a loopback-only vulnerable API and a TypeScript backend under `sentinelapi/`. Follow [`sentinelapi/backend/README.md`](sentinelapi/backend/README.md) for the current REST backend and its end-to-end demo. The older Python CLI remains available separately.
 
 ### 1. Launch the Vulnerable Test API
 ```bash
 node sentinelapi/vulnerable-api/server.js
 ```
-The mock API will run on `http://localhost:5050`. It includes deliberately seeded flaws:
-- BOLA on `/api/v1/orders/{orderId}`
-- Sensitive cardholder PAN exposure on `/api/v1/users/{userId}`
-- Missing rate limiting on `/api/v1/auth/login`
-- Unauthenticated access to `/api/v1/admin/metrics`
+The demo binds to `http://127.0.0.1:4000` and exposes its OpenAPI document at `/openapi.json`. Its intentional flaws include cross-user access to orders and nested payment/invoice/shipment records, exposed sensitive user/payment fields, a role-change route without a role check, mass assignment of protected user properties, and no login rate limiting. Keep this demo isolated to loopback.
 
 ### 2. Execute the Security Scanner
 ```bash
@@ -179,7 +193,7 @@ python sentinelapi/scanner/scanner.py --config sentinelapi/scanner/config.exampl
    - `NEXT_PUBLIC_SUPABASE_URL`: `https://your-project.supabase.co`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: `your-supabase-anon-key`
    - `SUPABASE_SERVICE_ROLE_KEY`: `your-supabase-service-role-key`
-   - `SCANNER_API_URL`: Optional URL to your background scanner worker.
+   - `SCANNER_API_URL`: Private URL of the Express scanner backend, reachable by the Next.js server. The default `http://127.0.0.1:5000` is for a same-machine local demo; a hosted web app needs the backend deployed on a trusted Node.js 22.13+ host and its API proxy protected by configured Supabase auth.
 4. Click **Deploy**. Vercel will run `npm run build` and output an optimized production deployment.
 
 ---

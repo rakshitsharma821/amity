@@ -8,6 +8,7 @@ import AuthModal from './auth-modal';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  authAvailable: boolean;
   openAuthModal: (mode?: 'login' | 'signup') => void;
   closeAuthModal: () => void;
   signOut: () => Promise<void>;
@@ -16,12 +17,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const authAvailable = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
+    if (!authAvailable) {
+      setLoading(false);
+      return;
+    }
     const supabase = createClient();
 
     // Initial session check
@@ -41,9 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [authAvailable]);
 
   const openAuthModal = (mode: 'login' | 'signup' = 'login') => {
+    if (!authAvailable) return;
     setModalMode(mode);
     setIsModalOpen(true);
   };
@@ -53,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!authAvailable) return;
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
@@ -64,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         loading,
+        authAvailable,
         openAuthModal,
         closeAuthModal,
         signOut,
