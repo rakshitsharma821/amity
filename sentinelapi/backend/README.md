@@ -26,6 +26,14 @@ npm run dev
 
 The backend binds to `127.0.0.1:5000` and stores scan/target records in `sentinelapi/backend/data/sentinel.sqlite`.
 
+## Deploy the complete demo to Railway
+
+The repository root includes `railway.json` and a process launcher for one Railway service. It starts the Next.js app on Railway's public `PORT`, and keeps the scanner backend and deliberately vulnerable target on loopback ports 5000 and 4000. Configure the Railway service to use the repository root (the default), attach a persistent volume at `/data`, and set `DATABASE_PATH=/data/sentinel.sqlite`.
+
+For a public hackathon demo, set `PUBLIC_DEMO_MODE=true`. This lets unauthenticated judges use the scanner proxy, while the backend refuses all non-loopback scan targets even if an allowlist is accidentally configured. Leave `AUTHORIZED_TARGET_HOSTS` empty. Do not use public demo mode for customer data or general production scanning; turn it off and configure Supabase auth for that use. `SCANNER_API_URL` may be omitted because the co-hosted scanner is available at `http://127.0.0.1:5000`.
+
+Railway reads the build and start commands and `/api/health` check from `railway.json`. After setting the volume and variables, redeploy the service. The root build compiles the frontend and backend; the start command runs all three processes together.
+
 ## Run the demo scan
 
 The committed example contains Alice/Bob demo credentials and their known owned object IDs. Credentials are sent with each scan and are not written to SQLite.

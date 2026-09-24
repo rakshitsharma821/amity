@@ -193,7 +193,12 @@ python sentinelapi/scanner/scanner.py --config sentinelapi/scanner/config.exampl
    - `NEXT_PUBLIC_SUPABASE_URL`: `https://your-project.supabase.co`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: `your-supabase-anon-key`
    - `SUPABASE_SERVICE_ROLE_KEY`: `your-supabase-service-role-key`
-   - `SCANNER_API_URL`: Private URL of the Express scanner backend, reachable by the Next.js server. The default `http://127.0.0.1:5000` is for a same-machine local demo; a hosted web app needs the backend deployed on a trusted Node.js 22.13+ host and its API proxy protected by configured Supabase auth.
+   - `SCANNER_API_URL`: Private URL of the Express scanner backend, reachable by the Next.js server. The Railway all-in-one deployment keeps it at `http://127.0.0.1:5000`.
+   - `PUBLIC_DEMO_MODE=true`: optional for a public hackathon demo. This bypasses Supabase auth only while the backend is co-hosted with its loopback sandbox; remote scanning is disabled in this mode. For general production scanning, leave it `false` and configure Supabase auth.
+
+### Railway hackathon deployment
+
+Use the repository root as the Railway service root. The checked-in `railway.json` builds and starts the Next.js site, scanner backend, and loopback demo API together. Attach a persistent volume mounted at `/data`, then set `DATABASE_PATH=/data/sentinel.sqlite` and `PUBLIC_DEMO_MODE=true`; keep `AUTHORIZED_TARGET_HOSTS` empty. Redeploy after saving these settings. Visit `/api/health` for the Railway web health check. See [`sentinelapi/backend/README.md`](sentinelapi/backend/README.md) for the isolation and production-auth notes.
 4. Click **Deploy**. Vercel will run `npm run build` and output an optimized production deployment.
 
 ---

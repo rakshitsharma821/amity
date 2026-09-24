@@ -1,4 +1,5 @@
 data/
+dist/
 .env
 *.sqlite
 *.sqlite-shm

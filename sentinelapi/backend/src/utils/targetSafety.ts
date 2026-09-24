@@ -7,6 +7,7 @@ export async function assertAuthorizedTarget(raw: string, authorized: boolean) {
   if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password || parsed.hash || parsed.search || parsed.pathname !== '/') throw new Error('Target must be an HTTP(S) origin URL without embedded credentials, path, query, or fragment');
   const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
   const local = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  if (env.publicDemoMode && parsed.origin !== 'http://127.0.0.1:4000') throw new Error('Public demo mode only permits the bundled loopback sandbox at http://127.0.0.1:4000');
   if (!local && (!authorized || !env.authorizedTargetHosts.has(host))) throw new Error('Target host is not in the explicit sandbox allowlist');
   if (!isIP(host)) {
     const addresses = await lookup(host, { all: true, verbatim: true });
