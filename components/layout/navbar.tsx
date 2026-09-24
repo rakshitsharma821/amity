@@ -11,7 +11,7 @@ import { cyberEase } from '@/lib/motion';
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, openAuthModal, signOut } = useAuth();
+  const { user, authAvailable, openAuthModal, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
@@ -124,8 +124,19 @@ export default function Navbar() {
                 <span>Sign Out</span>
               </button>
             </div>
+          ) : !authAvailable ? (
+            <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-lg bg-acid px-4 py-2 text-xs font-bold text-obsidian hover:bg-acid-hover">
+              <LayoutDashboard className="h-3.5 w-3.5" /> Launch Demo
+            </Link>
           ) : (
             <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-lime-200 border border-lime-300/20 hover:border-lime-300/50"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Live Demo</span>
+              </Link>
               <button
                 onClick={() => openAuthModal('login')}
                 className="px-4 py-2 text-xs font-semibold text-muted-heading hover:text-white transition-colors"
@@ -216,8 +227,23 @@ export default function Navbar() {
                     Sign Out
                   </button>
                 </>
+              ) : !authAvailable ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-lg bg-acid text-obsidian font-bold text-xs"
+                >
+                  Launch Demo
+                </Link>
               ) : (
                 <>
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full text-center py-2.5 rounded-lg border border-lime-300/25 text-lime-200 font-semibold text-xs"
+                  >
+                    Launch Live Demo
+                  </Link>
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);

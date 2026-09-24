@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { GithubIcon, GoogleIcon } from '@/components/icons/social-icons';
 import { createClient } from '@/lib/supabase/client';
+import { getAuthCallbackUrl } from '@/lib/supabase/auth-redirect';
 import { loginSchema } from '@/lib/validation';
 
 function LoginForm() {
@@ -17,7 +18,9 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => searchParams.get('error') === 'oauth_callback_failed'
+    ? 'Google/GitHub sign-in could not be completed. Check the provider setup and try again.'
+    : null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +63,7 @@ function LoginForm() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}${redirectPath}`,
+          redirectTo: getAuthCallbackUrl(redirectPath),
         },
       });
       if (error) setError(error.message);

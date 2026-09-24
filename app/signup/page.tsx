@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Shield, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { GithubIcon, GoogleIcon } from '@/components/icons/social-icons';
 import { createClient } from '@/lib/supabase/client';
+import { getAuthCallbackUrl } from '@/lib/supabase/auth-redirect';
 import { signupSchema } from '@/lib/validation';
 
 export default function SignupPage() {
@@ -66,7 +67,7 @@ export default function SignupPage() {
         email: validation.data.email,
         password: validation.data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: getAuthCallbackUrl('/dashboard'),
         },
       });
 
@@ -85,13 +86,17 @@ export default function SignupPage() {
   };
 
   const handleOAuth = async (provider: 'github' | 'google') => {
+    if (!acceptedTerms) {
+      setError('Please accept the Terms and Privacy Policy before creating an account.');
+      return;
+    }
     setLoading(true);
     const supabase = createClient();
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: getAuthCallbackUrl('/dashboard'),
         },
       });
       if (error) setError(error.message);

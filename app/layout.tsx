@@ -1,22 +1,9 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { siteConfig } from '@/site.config';
 import { AuthProvider } from '@/components/auth/auth-context';
 import Navbar from '@/components/layout/navbar';
 import Footer from '@/components/layout/footer';
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -116,7 +103,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} dark`}>
+    <html lang="en" className="dark">
       <head>
         <script
           type="application/ld+json"

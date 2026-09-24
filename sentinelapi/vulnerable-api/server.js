@@ -252,6 +252,13 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // Restore the in-memory sandbox state for repeatable demonstrations.
+  if (pathname === '/__demo/reset' && method === 'POST') {
+    users[1].role = 'customer'; users[1].is_admin = false;
+    users[2].role = 'customer'; users[2].is_admin = false;
+    return sendJson(res, 200, { status: 'reset', message: 'Demo sandbox state restored' });
+  }
+
   const cleanPath = pathname.replace(/\/+$/, '') || '/';
 
   // GET /orders/:id (VULNERABILITY: BOLA & Excessive Data Exposure)

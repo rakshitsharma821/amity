@@ -9,6 +9,8 @@
   --acid-green: #a3e635;
   --alert-red: #ff3b47;
   --amber-warn: #ffb020;
+  --font-space-grotesk: "Segoe UI";
+  --font-jetbrains-mono: "Consolas";
 }
 
 html {
