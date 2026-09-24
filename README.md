@@ -198,7 +198,7 @@ python sentinelapi/scanner/scanner.py --config sentinelapi/scanner/config.exampl
 
 ### Railway hackathon deployment
 
-Use the repository root as the Railway service root. The checked-in `railway.json` builds and starts the Next.js site, scanner backend, and loopback demo API together. Attach a persistent volume mounted at `/data`, then set `DATABASE_PATH=/data/sentinel.sqlite` and `PUBLIC_DEMO_MODE=true`; keep `AUTHORIZED_TARGET_HOSTS` empty. Redeploy after saving these settings. Visit `/api/health` for the Railway web health check. See [`sentinelapi/backend/README.md`](sentinelapi/backend/README.md) for the isolation and production-auth notes.
+Use the repository root as the Railway service root. The checked-in `railway.json` builds and starts the Next.js site, scanner backend, and loopback demo API together. Attach a persistent volume mounted at `/data` and set `DATABASE_PATH=/data/sentinel.sqlite`; keep `AUTHORIZED_TARGET_HOSTS` empty. The Railway launcher defaults `PUBLIC_DEMO_MODE` to `true` and pins `SCANNER_API_URL` to the co-hosted backend at `http://127.0.0.1:5000`, so local development values such as port `5050` cannot break the Railway proxy. Set `PUBLIC_DEMO_MODE=false` only when Supabase operator authentication is configured and required. Redeploy after changing settings. Visit `/api/health` for the Railway web health check. See [`sentinelapi/backend/README.md`](sentinelapi/backend/README.md) for the isolation and production-auth notes.
 4. Click **Deploy**. Vercel will run `npm run build` and output an optimized production deployment.
 
 ---

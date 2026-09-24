@@ -6,6 +6,19 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const children = new Set();
 let shuttingDown = false;
 
+// This launcher is for the all-in-one Railway deployment: the web app, scanner,
+// and intentionally vulnerable demo API run in the same service. Local-machine
+// values such as SCANNER_API_URL=http://localhost:5050 must not leak into this
+// deployment, where the scanner listens on 127.0.0.1:5000.
+process.env.SCANNER_API_URL = 'http://127.0.0.1:5000';
+
+// Allow a public, no-login hackathon demo by default. The backend enforces the
+// exact bundled loopback target in this mode. Set PUBLIC_DEMO_MODE=false to
+// require the production Supabase operator session instead.
+if (process.env.PUBLIC_DEMO_MODE === undefined) {
+  process.env.PUBLIC_DEMO_MODE = 'true';
+}
+
 function start(label, args, env = process.env) {
   const child = spawn(process.execPath, args, { cwd: root, env, stdio: 'inherit' });
   children.add(child);
