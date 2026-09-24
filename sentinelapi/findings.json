@@ -1,0 +1,136 @@
+{
+  "scan_metadata": {
+    "scanner": "SentinelAPI v1.0.0",
+    "target_base_url": "http://localhost:4000",
+    "target_spec_title": "SentinelAPI Vulnerable Test Target",
+    "timestamp": "2026-09-24T09:02:17.701062+00:00",
+    "duration_seconds": 0.51,
+    "total_findings": 5,
+    "severity_counts": {
+      "High": 4,
+      "Medium": 1,
+      "Low": 0
+    }
+  },
+  "findings": [
+    {
+      "id": "SENTINEL-BOLA-01",
+      "title": "Broken Object Level Authorization (BOLA) in /orders/{id}",
+      "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+      "severity": "High",
+      "endpoint": "GET /orders/{id}",
+      "explanation": "The endpoint '/orders/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 3) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+      "evidence": {
+        "tested_endpoint": "/orders/3",
+        "resource_id": 3,
+        "user_a_status": 200,
+        "user_b_status": 200,
+        "data_sample": {
+          "id": 3,
+          "user_id": 2,
+          "items": [
+            "4K UltraWide Monitor"
+          ],
+          "amount": 649,
+          "status": "shipped",
+          "card_number": "4242...[redacted]...4242",
+          "created_at": "2026-09-22T09:12:00Z"
+        }
+      },
+      "reproduction": "curl -X GET \"http://localhost:4000/orders/3\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+      "recommendation": "Enforce strict ownership validation at the data-access layer for '/orders/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+    },
+    {
+      "id": "SENTINEL-BOLA-02",
+      "title": "Broken Object Level Authorization (BOLA) in /users/{id}",
+      "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+      "severity": "High",
+      "endpoint": "GET /users/{id}",
+      "explanation": "The endpoint '/users/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 2) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+      "evidence": {
+        "tested_endpoint": "/users/2",
+        "resource_id": 2,
+        "user_a_status": 200,
+        "user_b_status": 200,
+        "data_sample": {
+          "id": 2,
+          "username": "bob",
+          "password": "bob...[redacted]",
+          "email": "bob@example.com",
+          "role": "customer",
+          "bio": "DevOps engineer and automation geek"
+        }
+      },
+      "reproduction": "curl -X GET \"http://localhost:4000/users/2\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+      "recommendation": "Enforce strict ownership validation at the data-access layer for '/users/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+    },
+    {
+      "id": "SENTINEL-DATA-EXP-03",
+      "title": "Excessive Data Exposure: Unmasked Payment Card Data in /orders/{id}",
+      "vulnerability_class": "Excessive Data Exposure / Financial Data (PCI-DSS)",
+      "severity": "High",
+      "endpoint": "GET /orders/{id}",
+      "explanation": "The endpoint '/orders/{id}' returns unmasked primary account numbers (PAN) that successfully pass the Luhn checksum algorithm. Exposing full payment card numbers violates PCI-DSS Requirement 3.3 and significantly increases financial fraud risk.",
+      "evidence": {
+        "detected_card_count": 1,
+        "sample_masked_card": "4532...[redacted]...1235",
+        "sample_payload": {
+          "id": 1,
+          "user_id": 1,
+          "items": [
+            "Mechanical Keyboard",
+            "USB-C Hub"
+          ],
+          "amount": 189.99,
+          "status": "completed",
+          "card_number": "4532...[redacted]...1235",
+          "created_at": "2026-09-20T10:15:00Z"
+        }
+      },
+      "reproduction": "curl -X GET \"http://localhost:4000/orders/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+      "recommendation": "Mask all payment card numbers returned by '/orders/{id}', displaying at most the first 6 and last 4 digits (e.g., '4532-****-****-1235'). Store and transmit tokens rather than raw PANs."
+    },
+    {
+      "id": "SENTINEL-DATA-EXP-04",
+      "title": "Excessive Data Exposure: Plaintext Password Leak in /users/{id}",
+      "vulnerability_class": "Excessive Data Exposure / Credential Leakage",
+      "severity": "High",
+      "endpoint": "GET /users/{id}",
+      "explanation": "The endpoint '/users/{id}' exposes user credentials in plaintext within the response payload. Client applications rarely require raw passwords or hashes. Exposing credentials allows any compromised client, MITM observer, or caching layer to harvest sensitive access keys.",
+      "evidence": {
+        "exposed_fields": [
+          "password"
+        ],
+        "sample_payload": {
+          "id": 1,
+          "username": "alice",
+          "password": "ali...[redacted]",
+          "email": "alice@example.com",
+          "role": "customer",
+          "bio": "Senior developer and coffee enthusiast"
+        }
+      },
+      "reproduction": "curl -X GET \"http://localhost:4000/users/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+      "recommendation": "Remove password fields from API Data Transfer Objects (DTOs) and serialization schemas for '/users/{id}'. Ensure authentication hashes and plaintext secrets are stripped before returning user data."
+    },
+    {
+      "id": "SENTINEL-RATE-LIMIT-05",
+      "title": "Missing Rate Limiting on Authentication Endpoint (/login)",
+      "vulnerability_class": "Missing Rate Limiting / Authentication Brute-Force",
+      "severity": "Medium",
+      "endpoint": "POST /login",
+      "explanation": "The authentication endpoint '/login' accepted a bounded burst of 30 rapid requests without triggering HTTP 429 (Too Many Requests) or signaling rate limit status headers ('Retry-After', 'X-RateLimit-*'). Unbounded authentication endpoints enable credential stuffing and brute-force dictionary attacks against user accounts.",
+      "evidence": {
+        "tested_endpoint": "/login",
+        "burst_requests_sent": 30,
+        "status_distribution": {
+          "HTTP_401": 30
+        },
+        "rate_limiting_headers_detected": false,
+        "http_429_observed": false
+      },
+      "reproduction": "for i in $(seq 1 30); do\n  curl -s -o /dev/null -w \"HTTP %{http_code}\\n\" -X POST \"http://localhost:4000/login\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"username\": \"alice\", \"password\": \"wrong-password-test\"}'\ndone",
+      "recommendation": "Implement rate limiting on '/login' using an IP and account-based token bucket or leaky bucket algorithm. Enforce standard HTTP 429 status responses accompanied by 'Retry-After' and 'X-RateLimit-Reset' headers when request thresholds are exceeded."
+    }
+  ]
+}

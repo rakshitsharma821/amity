@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SentinelAPI — Zero-Trust API Vulnerability Dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #0a0a0b;
+      --bg-secondary: rgba(255, 255, 255, 0.03);
+      --bg-tertiary: rgba(255, 255, 255, 0.07);
+      --bg-card: rgba(255, 255, 255, 0.05);
+      --bg-card-hover: rgba(255, 255, 255, 0.08);
+      --border-color: rgba(255, 255, 255, 0.10);
+      --border-light: rgba(255, 255, 255, 0.20);
+      --text-main: #f4f4f5;
+      --text-muted: #8b8b93;
+      --text-sub: #52525b;
+      
+      --high-color: #ff3b47;
+      --high-bg: rgba(255, 59, 71, 0.15);
+      --high-border: rgba(255, 59, 71, 0.35);
+      
+      --med-color: #ffb020;
+      --med-bg: rgba(255, 176, 32, 0.15);
+      --med-border: rgba(255, 176, 32, 0.35);
+      
+      --low-color: #84a98c;
+      --low-bg: rgba(163, 230, 53, 0.10);
+      --low-border: rgba(163, 230, 53, 0.25);
+      
+      --accent-primary: #a3e635;
+      --accent-glow: rgba(163, 230, 53, 0.35);
+      --code-bg: #111114;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: #18181b;
+      border: 1px solid var(--accent-primary);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .brand h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+    }
+
+    .brand p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      background-color: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.40);
+    }
+
+    .btn-primary {
+      background-color: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: #0a0a0b;
+      font-weight: 700;
+      box-shadow: 0 2px 12px rgba(163, 230, 53, 0.25);
+    }
+
+    .btn-primary:hover {
+      background-color: #bbf451;
+      color: #000;
+      box-shadow: 0 4px 18px rgba(163, 230, 53, 0.4);
+    }
+
+    /* Target Metadata Banner */
+    .metadata-banner {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 13px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .meta-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .meta-label {
+      color: var(--text-sub);
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .meta-value {
+      color: var(--text-main);
+      font-family: monospace;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    .meta-status-pill {
+      background: rgba(255, 59, 71, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(255, 59, 71, 0.35);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta-status-pill.pass {
+      background: rgba(163, 230, 53, 0.15);
+      color: var(--accent-primary);
+      border-color: rgba(163, 230, 53, 0.35);
+    }
+
+    /* Summary Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-light);
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+    }
+
+    .stat-card.total::before { background: var(--accent-primary); }
+    .stat-card.high::before { background: var(--high-color); }
+    .stat-card.med::before { background: var(--med-color); }
+    .stat-card.low::before { background: var(--low-color); }
+
+    .stat-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .stat-num {
+      font-size: 32px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .stat-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .stat-card.high .stat-badge { background: var(--high-bg); color: var(--high-color); border: 1px solid var(--high-border); }
+    .stat-card.med .stat-badge { background: var(--med-bg); color: var(--med-color); border: 1px solid var(--med-border); }
+    .stat-card.low .stat-badge { background: var(--low-bg); color: var(--low-color); border: 1px solid var(--low-border); }
+    .stat-card.total .stat-badge { background: rgba(163, 230, 53, 0.15); color: var(--accent-primary); border: 1px solid rgba(163, 230, 53, 0.35); }
+
+    /* Controls & Filtering */
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+
+    .filter-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-tab:hover {
+      color: var(--text-main);
+    }
+
+    .filter-tab.active {
+      background: var(--bg-tertiary);
+      color: #fff;
+      border: 1px solid var(--border-light);
+    }
+
+    .search-box {
+      flex: 1;
+      max-width: 380px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 14px 8px 36px;
+      color: var(--text-main);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+      font-size: 14px;
+    }
+
+    .toggle-all-btn {
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      text-decoration: underline;
+      padding: 4px;
+    }
+    .toggle-all-btn:hover {
+      color: var(--accent-primary);
+    }
+
+    /* Findings List */
+    .findings-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .finding-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: all 0.2s ease;
+    }
+
+    .finding-card:hover {
+      border-color: var(--border-light);
+    }
+
+    .finding-header {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      gap: 14px;
+      background: transparent;
+    }
+
+    .finding-header:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .severity-pill {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .severity-pill.High {
+      background: var(--high-bg);
+      color: var(--high-color);
+      border: 1px solid var(--high-border);
+    }
+
+    .severity-pill.Medium {
+      background: var(--med-bg);
+      color: var(--med-color);
+      border: 1px solid var(--med-border);
+    }
+
+    .severity-pill.Low {
+      background: var(--low-bg);
+      color: var(--low-color);
+      border: 1px solid var(--low-border);
+    }
+
+    .method-tag {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-primary);
+      flex-shrink: 0;
+    }
+
+    .method-tag.POST {
+      color: #e4e4e7;
+    }
+
+    .finding-title-group {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .finding-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .finding-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .finding-id {
+      font-family: monospace;
+      color: var(--accent-primary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chevron {
+      color: var(--text-sub);
+      transition: transform 0.2s ease;
+      font-size: 14px;
+    }
+
+    .finding-card.expanded .chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Detail View */
+    .finding-detail {
+      display: none;
+      padding: 20px;
+      border-top: 1px solid var(--border-color);
+      background: rgba(14, 14, 16, 0.7);
+    }
+
+    .finding-card.expanded .finding-detail {
+      display: block;
+    }
+
+    .detail-section {
+      margin-bottom: 20px;
+    }
+
+    .detail-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .explanation-text {
+      font-size: 14px;
+      color: var(--text-main);
+      background: var(--bg-card);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border-left: 3px solid var(--accent-primary);
+      line-height: 1.6;
+    }
+
+    .recommendation-box {
+      font-size: 14px;
+      color: #ecfccb;
+      background: rgba(163, 230, 53, 0.08);
+      padding: 14px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(163, 230, 53, 0.25);
+      border-left: 3px solid var(--accent-primary);
+      line-height: 1.6;
+    }
+
+    /* Code & Evidence blocks */
+    .code-container {
+      position: relative;
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 14px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .copy-btn {
+      background: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+      color: #0a0a0b;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: #bbf451;
+      color: #000;
+    }
+
+    .copy-btn.copied {
+      background: #fff;
+      color: #0a0a0b;
+      border-color: #fff;
+    }
+
+    pre {
+      padding: 14px;
+      overflow-x: auto;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 13px;
+      color: #e4e4e7;
+      line-height: 1.5;
+    }
+
+    .evidence-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #d4d4d8;
+      max-height: 260px;
+      overflow-y: auto;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      border: 1px dashed var(--border-color);
+      border-radius: 12px;
+    }
+
+    .empty-state h3 {
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    /* Drag and Drop Overlay */
+    #drop-zone-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10, 10, 11, 0.92);
+      border: 4px dashed var(--accent-primary);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #18181b;
+      border: 1px solid var(--accent-primary);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 16px; }
+      header { flex-direction: column; align-items: flex-start; }
+      .header-actions { width: 100%; justify-content: flex-start; }
+      .controls-bar { flex-direction: column; align-items: stretch; }
+      .search-box { max-width: 100%; }
+      .finding-header { flex-direction: column; align-items: flex-start; }
+      .header-right { width: 100%; justify-content: space-between; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Drag & Drop Overlay -->
+  <div id="drop-zone-overlay">
+    <div>📂 Drop findings.json here to load report</div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast">Report updated</div>
+
+  <!-- Hidden File Input -->
+  <input type="file" id="file-input" accept=".json" style="display: none;" />
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">🛡️</div>
+        <div>
+          <h1>SentinelAPI</h1>
+          <p>Zero-Trust API Vulnerability Scanner • Executive & Technical Report</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" id="load-file-btn">
+          <span>📁</span> Load findings.json
+        </button>
+        <button class="btn" id="export-json-btn">
+          <span>💾</span> Export JSON
+        </button>
+      </div>
+    </header>
+
+    <!-- Metadata Banner -->
+    <div class="metadata-banner" id="meta-banner">
+      <div class="meta-group">
+        <span class="meta-label">Target:</span>
+        <span class="meta-value" id="meta-target">http://localhost:4000</span>
+      </div>
+      <div class="meta-group">
+        <span class="meta-label">Spec:</span>
+        <span class="meta-value" id="meta-spec">SentinelAPI Vulnerable Test Target</span>
+      </div>
+      <div class="meta-group">
+        <span class="meta-label">Scanned At:</span>
+        <span class="meta-value" id="meta-timestamp">2026-09-24T08:43:02Z</span>
+      </div>
+      <div class="meta-group">
+        <span class="meta-label">CI/CD Gate:</span>
+        <div class="meta-status-pill" id="meta-gate-pill">
+          <span>✖</span> FAILED (High Risk Detected)
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-title">Total Findings</div>
+        <div class="stat-num" id="stat-total">
+          5 <span class="stat-badge">Detected</span>
+        </div>
+      </div>
+      <div class="stat-card high">
+        <div class="stat-title">High Severity</div>
+        <div class="stat-num" id="stat-high">
+          4 <span class="stat-badge">Critical Action</span>
+        </div>
+      </div>
+      <div class="stat-card med">
+        <div class="stat-title">Medium Severity</div>
+        <div class="stat-num" id="stat-med">
+          1 <span class="stat-badge">Remediate</span>
+        </div>
+      </div>
+      <div class="stat-card low">
+        <div class="stat-title">Low Severity</div>
+        <div class="stat-num" id="stat-low">
+          0 <span class="stat-badge">Informational</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls & Filtering -->
+    <div class="controls-bar">
+      <div class="filter-tabs" id="filter-tabs">
+        <button class="filter-tab active" data-filter="all">All (5)</button>
+        <button class="filter-tab" data-filter="high">High (4)</button>
+        <button class="filter-tab" data-filter="medium">Medium (1)</button>
+        <button class="filter-tab" data-filter="low">Low (0)</button>
+      </div>
+
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search by title, endpoint, or vulnerability..." />
+      </div>
+
+      <button class="toggle-all-btn" id="toggle-all-btn">Expand All</button>
+    </div>
+
+    <!-- Findings Container -->
+    <div class="findings-container" id="findings-container">
+      <!-- Cards rendered dynamically via JS -->
+    </div>
+  </div>
+
+  <!-- Embedded Default Findings (Ensures works instantly when opened via file://) -->
+  <script id="embedded-data" type="application/json">
+  {
+    "scan_metadata": {
+      "scanner": "SentinelAPI v1.0.0",
+      "target_base_url": "http://localhost:4000",
+      "target_spec_title": "SentinelAPI Vulnerable Test Target",
+      "timestamp": "2026-09-24T08:43:02.266Z",
+      "duration_seconds": 0.47,
+      "total_findings": 5,
+      "severity_counts": {
+        "High": 4,
+        "Medium": 1,
+        "Low": 0
+      }
+    },
+    "findings": [
+      {
+        "id": "SENTINEL-BOLA-01",
+        "title": "Broken Object Level Authorization (BOLA) in /orders/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 3) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/orders/3",
+          "resource_id": 3,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 3,
+            "user_id": 2,
+            "items": ["4K UltraWide Monitor"],
+            "amount": 649,
+            "status": "shipped",
+            "card_number": "4242...[redacted]...4242",
+            "created_at": "2026-09-22T09:12:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/3\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/orders/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-BOLA-02",
+        "title": "Broken Object Level Authorization (BOLA) in /users/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 2) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/users/2",
+          "resource_id": 2,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 2,
+            "username": "bob",
+            "password": "bob...[redacted]",
+            "email": "bob@example.com",
+            "role": "customer",
+            "bio": "DevOps engineer and automation geek"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/2\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/users/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-03",
+        "title": "Excessive Data Exposure: Unmasked Payment Card Data in /orders/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Financial Data (PCI-DSS)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' returns unmasked primary account numbers (PAN) that successfully pass the Luhn checksum algorithm. Exposing full payment card numbers violates PCI-DSS Requirement 3.3 and significantly increases financial fraud risk.",
+        "evidence": {
+          "detected_card_count": 1,
+          "sample_masked_card": "4532...[redacted]...1235",
+          "sample_payload": {
+            "id": 1,
+            "user_id": 1,
+            "items": ["Mechanical Keyboard", "USB-C Hub"],
+            "amount": 189.99,
+            "status": "completed",
+            "card_number": "4532...[redacted]...1235",
+            "created_at": "2026-09-20T10:15:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Mask all payment card numbers returned by '/orders/{id}', displaying at most the first 6 and last 4 digits (e.g., '4532-****-****-1235'). Store and transmit tokens rather than raw PANs."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-04",
+        "title": "Excessive Data Exposure: Plaintext Password Leak in /users/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Credential Leakage",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' exposes user credentials in plaintext within the response payload. Client applications rarely require raw passwords or hashes. Exposing credentials allows any compromised client, MITM observer, or caching layer to harvest sensitive access keys.",
+        "evidence": {
+          "exposed_fields": ["password"],
+          "sample_payload": {
+            "id": 1,
+            "username": "alice",
+            "password": "ali...[redacted]",
+            "email": "alice@example.com",
+            "role": "customer",
+            "bio": "Senior developer and coffee enthusiast"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Remove password fields from API Data Transfer Objects (DTOs) and serialization schemas for '/users/{id}'. Ensure authentication hashes and plaintext secrets are stripped before returning user data."
+      },
+      {
+        "id": "SENTINEL-RATE-LIMIT-05",
+        "title": "Missing Rate Limiting on Authentication Endpoint (/login)",
+        "vulnerability_class": "Missing Rate Limiting / Authentication Brute-Force",
+        "severity": "Medium",
+        "endpoint": "POST /login",
+        "explanation": "The authentication endpoint '/login' accepted a bounded burst of 30 rapid requests without triggering HTTP 429 (Too Many Requests) or signaling rate limit status headers ('Retry-After', 'X-RateLimit-*'). Unbounded authentication endpoints enable credential stuffing and brute-force dictionary attacks against user accounts.",
+        "evidence": {
+          "tested_endpoint": "/login",
+          "burst_requests_sent": 30,
+          "status_distribution": {
+            "HTTP_401": 30
+          },
+          "rate_limiting_headers_detected": false,
+          "http_429_observed": false
+        },
+        "reproduction": "for i in $(seq 1 30); do\n  curl -s -o /dev/null -w \"HTTP %{http_code}\\n\" -X POST \"http://localhost:4000/login\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"username\": \"alice\", \"password\": \"wrong-password-test\"}'\ndone",
+        "recommendation": "Implement rate limiting on '/login' using an IP and account-based token bucket or leaky bucket algorithm. Enforce standard HTTP 429 status responses accompanied by 'Retry-After' and 'X-RateLimit-Reset' headers when request thresholds are exceeded."
+      }
+    ]
+  }
+  </script>
+
+  <script>
+    // State management
+    let reportData = null;
+    let currentFilter = 'all';
+    let searchQuery = '';
+    let allExpanded = false;
+
+    // DOM Elements
+    const fileInput = document.getElementById('file-input');
+    const loadFileBtn = document.getElementById('load-file-btn');
+    const exportJsonBtn = document.getElementById('export-json-btn');
+    const toast = document.getElementById('toast');
+    const dropZone = document.getElementById('drop-zone-overlay');
+    const findingsContainer = document.getElementById('findings-container');
+    const searchInput = document.getElementById('search-input');
+    const filterTabs = document.getElementById('filter-tabs');
+    const toggleAllBtn = document.getElementById('toggle-all-btn');
+
+    // Stats Elements
+    const statTotal = document.getElementById('stat-total');
+    const statHigh = document.getElementById('stat-high');
+    const statMed = document.getElementById('stat-med');
+    const statLow = document.getElementById('stat-low');
+
+    // Meta Elements
+    const metaTarget = document.getElementById('meta-target');
+    const metaSpec = document.getElementById('meta-spec');
+    const metaTimestamp = document.getElementById('meta-timestamp');
+    const metaGatePill = document.getElementById('meta-gate-pill');
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    function init() {
+      try {
+        const embeddedJson = document.getElementById('embedded-data').textContent;
+        reportData = JSON.parse(embeddedJson);
+        renderDashboard();
+      } catch (err) {
+        console.error("Failed to parse embedded report data:", err);
+      }
+      setupEventListeners();
+    }
+
+    function setupEventListeners() {
+      // File loader
+      loadFileBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', handleFileSelect);
+
+      // Export JSON
+      exportJsonBtn.addEventListener('click', () => {
+        if (!reportData) return;
+        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sentinel-findings-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // Drag and drop
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.style.display = 'flex';
+      });
+
+      dropZone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dropZone.style.display = 'none';
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.display = 'none';
+        if (e.dataTransfer.files.length > 0) {
+          readJsonFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      // Filter tabs
+      filterTabs.addEventListener('click', (e) => {
+        if (e.target.classList.contains('filter-tab')) {
+          document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+          e.target.classList.add('active');
+          currentFilter = e.target.dataset.filter;
+          renderFindings();
+        }
+      });
+
+      // Search input
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase().trim();
+        renderFindings();
+      });
+
+      // Toggle all
+      toggleAllBtn.addEventListener('click', () => {
+        allExpanded = !allExpanded;
+        toggleAllBtn.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+        document.querySelectorAll('.finding-card').forEach(card => {
+          if (allExpanded) {
+            card.classList.add('expanded');
+          } else {
+            card.classList.remove('expanded');
+          }
+        });
+      });
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        readJsonFile(file);
+      }
+    }
+
+    function readJsonFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && (parsed.findings || Array.isArray(parsed))) {
+            reportData = Array.isArray(parsed) ? { findings: parsed, scan_metadata: {} } : parsed;
+            renderDashboard();
+            showToast(`Loaded ${file.name} successfully`);
+          } else {
+            alert('Invalid JSON structure: Expected a SentinelAPI report format.');
+          }
+        } catch (err) {
+          alert('Error parsing JSON file: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function renderDashboard() {
+      if (!reportData) return;
+
+      const meta = reportData.scan_metadata || {};
+      const findings = reportData.findings || [];
+
+      // Update Metadata
+      metaTarget.textContent = meta.target_base_url || 'Unknown';
+      metaSpec.textContent = meta.target_spec_title || 'OpenAPI Spec';
+      metaTimestamp.textContent = meta.timestamp ? new Date(meta.timestamp).toLocaleString() : 'N/A';
+
+      // Counts
+      const total = findings.length;
+      const highCount = findings.filter(f => f.severity === 'High').length;
+      const medCount = findings.filter(f => f.severity === 'Medium').length;
+      const lowCount = findings.filter(f => f.severity === 'Low').length;
+
+      statTotal.innerHTML = `${total} <span class="stat-badge">Detected</span>`;
+      statHigh.innerHTML = `${highCount} <span class="stat-badge">Critical</span>`;
+      statMed.innerHTML = `${medCount} <span class="stat-badge">Remediate</span>`;
+      statLow.innerHTML = `${lowCount} <span class="stat-badge">Low</span>`;
+
+      // CI/CD Gate Pill
+      if (highCount > 0) {
+        metaGatePill.className = 'meta-status-pill';
+        metaGatePill.innerHTML = `<span>✖</span> FAILED (${highCount} High Findings)`;
+      } else {
+        metaGatePill.className = 'meta-status-pill pass';
+        metaGatePill.innerHTML = `<span>✔</span> PASSED (No High Flaws)`;
+      }
+
+      // Update Filter Tabs Text
+      document.querySelector('[data-filter="all"]').textContent = `All (${total})`;
+      document.querySelector('[data-filter="high"]').textContent = `High (${highCount})`;
+      document.querySelector('[data-filter="medium"]').textContent = `Medium (${medCount})`;
+      document.querySelector('[data-filter="low"]').textContent = `Low (${lowCount})`;
+
+      renderFindings();
+    }
+
+    function renderFindings() {
+      if (!reportData || !reportData.findings) return;
+
+      const findings = reportData.findings;
+      const filtered = findings.filter(f => {
+        // Filter tab match
+        if (currentFilter !== 'all' && f.severity.toLowerCase() !== currentFilter) {
+          return false;
+        }
+        // Search match
+        if (searchQuery) {
+          const matchTarget = `${f.id} ${f.title} ${f.endpoint} ${f.vulnerability_class || ''} ${f.explanation || ''}`.toLowerCase();
+          return matchTarget.includes(searchQuery);
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        findingsContainer.innerHTML = `
+          <div class="empty-state">
+            <h3>No findings match criteria</h3>
+            <p>Try adjusting your search query or severity filters.</p>
+          </div>
+        `;
+        return;
+      }
+
+      findingsContainer.innerHTML = filtered.map((f, idx) => {
+        const methodMatch = (f.endpoint || '').match(/^(GET|POST|PUT|DELETE|PATCH)/);
+        const method = methodMatch ? methodMatch[1] : 'API';
+        const cleanEndpoint = (f.endpoint || '').replace(/^(GET|POST|PUT|DELETE|PATCH)\s+/, '');
+        const isExp = allExpanded ? 'expanded' : '';
+
+        return `
+          <div class="finding-card ${isExp}" id="card-${f.id}">
+            <div class="finding-header" onclick="toggleCard('${f.id}')">
+              <div class="header-left">
+                <span class="severity-pill ${f.severity}">${f.severity}</span>
+                <span class="method-tag ${method}">${method}</span>
+                <div class="finding-title-group">
+                  <div class="finding-title">${escapeHtml(f.title)}</div>
+                  <div class="finding-subtitle">
+                    <span class="finding-id">${f.id}</span>
+                    <span>•</span>
+                    <span>${escapeHtml(cleanEndpoint)}</span>
+                    <span>•</span>
+                    <span>${escapeHtml(f.vulnerability_class || 'Flaw')}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="header-right">
+                <span class="chevron">▼</span>
+              </div>
+            </div>
+
+            <div class="finding-detail">
+              <!-- Explanation for Non-Tech & Execs -->
+              <div class="detail-section">
+                <div class="section-title">💡 Plain-English Explanation (Risk Overview)</div>
+                <div class="explanation-text">${escapeHtml(f.explanation || 'No description provided.')}</div>
+              </div>
+
+              <!-- Masked Evidence -->
+              <div class="detail-section">
+                <div class="section-title">🔍 Masked Evidence & Payload Analysis</div>
+                <div class="evidence-block">${formatJsonHighlight(f.evidence)}</div>
+              </div>
+
+              <!-- Runnable cURL Reproduction -->
+              <div class="detail-section">
+                <div class="section-title">⚡ Runnable Proof-of-Concept (cURL)</div>
+                <div class="code-container">
+                  <div class="code-header">
+                    <span>Terminal Command (Reproduction)</span>
+                    <button class="copy-btn" onclick="copyCode(this, '${escapeAttr(f.reproduction || '')}')">Copy cURL</button>
+                  </div>
+                  <pre><code>${escapeHtml(f.reproduction || '')}</code></pre>
+                </div>
+              </div>
+
+              <!-- Concrete Fix -->
+              <div class="detail-section">
+                <div class="section-title">🛡️ Concrete Remediation Recommendation</div>
+                <div class="recommendation-box">${escapeHtml(f.recommendation || 'Remediate this endpoint according to zero-trust authorization standards.')}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleCard(id) {
+      const card = document.getElementById(`card-${id}`);
+      if (card) {
+        card.classList.toggle('expanded');
+      }
+    }
+
+    function copyCode(btn, code) {
+      navigator.clipboard.writeText(code).then(() => {
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Clipboard copy failed:', err);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(str) {
+      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, '\\n');
+    }
+
+    function formatJsonHighlight(obj) {
+      if (!obj) return '[none]';
+      const formatted = JSON.stringify(obj, null, 2);
+      return escapeHtml(formatted);
+    }
+
+    // Start
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

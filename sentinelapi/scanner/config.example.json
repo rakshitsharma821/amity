@@ -1,0 +1,75 @@
+{
+  "target": {
+    "base_url": "http://localhost:4000",
+    "spec_url": "http://localhost:4000/openapi.json",
+    "spec_file": ""
+  },
+  "auth": {
+    "login_endpoint": "/login",
+    "method": "POST",
+    "token_json_path": "token",
+    "token_header_prefix": "Bearer ",
+    "users": {
+      "user_a": {
+        "name": "Alice (Attacker Context)",
+        "credentials": {
+          "username": "alice",
+          "password": "alice123"
+        },
+        "seed_ids": {
+          "orders": [1, 2],
+          "users": [1],
+          "default": [1]
+        }
+      },
+      "user_b": {
+        "name": "Bob (Victim Context)",
+        "credentials": {
+          "username": "bob",
+          "password": "bob123"
+        },
+        "seed_ids": {
+          "orders": [3, 4],
+          "users": [2],
+          "default": [2]
+        }
+      }
+    }
+  },
+  "checks": {
+    "bola": {
+      "enabled": true,
+      "list_endpoints": [
+        {
+          "endpoint": "/me/orders",
+          "extract_id_path": "id",
+          "maps_to": "orders"
+        }
+      ]
+    },
+    "excessive_data_exposure": {
+      "enabled": true,
+      "sensitive_fields": [
+        "password",
+        "passwd",
+        "card_number",
+        "cvv",
+        "ssn",
+        "token",
+        "secret",
+        "api_key"
+      ],
+      "detect_luhn_cards": true
+    },
+    "rate_limiting": {
+      "enabled": true,
+      "burst_count": 30,
+      "endpoint": "/login",
+      "method": "POST",
+      "payload": {
+        "username": "alice",
+        "password": "wrong-password-test"
+      }
+    }
+  }
+}
