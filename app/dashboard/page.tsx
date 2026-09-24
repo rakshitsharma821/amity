@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Shield,
@@ -17,11 +17,16 @@ import {
   ExternalLink,
   RefreshCw,
   Search,
-  Filter,
+  Database,
+  ShieldCheck,
+  Trash2,
 } from 'lucide-react';
 import { createTargetSchema, type CreateTargetInput } from '@/lib/validation';
 import { motion, AnimatePresence } from 'framer-motion';
 import AmbientBackground from '@/components/cyber/ambient-background';
+import SocBotModal from '@/components/cyber/soc-bot-modal';
+import { useAuth } from '@/components/auth/auth-context';
+import { createClient } from '@/lib/supabase/client';
 
 interface Target {
   id: string;
@@ -50,22 +55,11 @@ interface Finding {
 }
 
 export default function DashboardPage() {
-  // Target state
-  const [targets, setTargets] = useState<Target[]>([
-    {
-      id: 'target-sandbox-local',
-      name: 'SentinelAPI Local Sandbox API',
-      baseUrl: 'http://localhost:4000',
-      specUrl: 'http://localhost:4000/openapi.json',
-      verificationToken: 'sentinel_verify_local_sandbox_demo',
-      verificationMethod: 'well_known',
-      isVerified: true,
-      verifiedAt: 'Verified (Local Loopback Sandbox)',
-      scansCount: 1,
-    },
-  ]);
+  const { user, openAuthModal } = useAuth();
 
-  const [selectedTargetId, setSelectedTargetId] = useState<string>('target-sandbox-local');
+  // Target state
+  const [targets, setTargets] = useState<Target[]>([]);
+  const [selectedTargetId, setSelectedTargetId] = useState<string>('');
   const [isAddTargetModalOpen, setIsAddTargetModalOpen] = useState(false);
 
   // Form states for new target
@@ -98,76 +92,91 @@ export default function DashboardPage() {
   const [expandedFindingId, setExpandedFindingId] = useState<string | null>(null);
   const [copiedCurlId, setCopiedCurlId] = useState<string | null>(null);
 
-  // Baseline example findings (honestly marked as "Example finding")
-  const [findings, setFindings] = useState<Finding[]>([
-    {
-      id: 'f-1',
-      findingCode: 'SENTINEL-BOLA-01',
-      title: 'Broken Object Level Authorization (BOLA) in Order Retrieval',
-      vulnerabilityClass: 'Broken Object Level Authorization (BOLA / IDOR)',
-      severity: 'High',
-      endpoint: 'GET /orders/{id}',
-      explanation:
-        'User A requested User B’s private order record (ID: 3) and received the complete unmasked object without ownership verification.',
-      evidence: {
-        tested_endpoint: '/orders/3',
-        status_code: 200,
-        owner_id: 2,
-        requester_id: 1,
-        unmasked_card_detected: '4242...[redacted]...4242',
-      },
-      reproduction:
-        'curl -X GET "http://localhost:4000/orders/3" \\\n  -H "Authorization: Bearer eyJ...[redacted]" \\\n  -H "Accept: application/json"',
-      recommendation:
-        'Enforce object-level access control in controller handlers. Ensure requester token user_id strictly matches the order.user_id before executing queries.',
-      isExample: true,
-    },
-    {
-      id: 'f-2',
-      findingCode: 'SENTINEL-DATA-02',
-      title: 'Plaintext Password Leak in User Profile Response',
-      vulnerabilityClass: 'Excessive Data Exposure / Credential Leakage',
-      severity: 'High',
-      endpoint: 'GET /users/{id}',
-      explanation:
-        'The endpoint returns the user’s plaintext password attribute in the JSON payload, exposing account credentials to compromised clients or network logs.',
-      evidence: {
-        tested_endpoint: '/users/2',
-        exposed_attributes: ['password'],
-        sample_value: 'bob...[redacted]',
-      },
-      reproduction:
-        'curl -X GET "http://localhost:4000/users/2" \\\n  -H "Authorization: Bearer eyJ...[redacted]" \\\n  -H "Accept: application/json"',
-      recommendation:
-        'Strip sensitive authentication attributes from Data Transfer Objects (DTOs) and serialization schemas before returning responses.',
-      isExample: true,
-    },
-    {
-      id: 'f-3',
-      findingCode: 'SENTINEL-RATE-03',
-      title: 'Missing Rate Limiting on Authentication Endpoint',
-      vulnerabilityClass: 'Missing Rate Limiting / Authentication Brute-Force',
-      severity: 'Medium',
-      endpoint: 'POST /login',
-      explanation:
-        'The authentication route accepted a bounded burst of 30 requests without HTTP 429 status throttling or Retry-After signaling headers.',
-      evidence: {
-        burst_size: 30,
-        http_429_observed: false,
-        rate_limit_headers: false,
-      },
-      reproduction:
-        'for i in $(seq 1 30); do\n  curl -s -o /dev/null -w "HTTP %{http_code}\\n" -X POST "http://localhost:4000/login" \\\n    -H "Content-Type: application/json" \\\n    -d \'{"username":"audit","password":"bad"}\'\ndone',
-      recommendation:
-        'Implement an IP and account-based token bucket rate limiter returning HTTP 429 Too Many Requests with Retry-After headers.',
-      isExample: true,
-    },
-  ]);
+  // Live findings state
+  const [findings, setFindings] = useState<Finding[]>([]);
+
+  // Synchronize with Supabase Cloud Database for User Targets
+  useEffect(() => {
+    if (!user) return;
+    const supabase = createClient();
+
+    // 1. Fetch user targets from Supabase
+    supabase
+      .from('targets')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .then(({ data: dbTargets, error }) => {
+        if (!error && dbTargets && dbTargets.length > 0) {
+          const mappedTargets: Target[] = dbTargets.map((t) => ({
+            id: t.id,
+            name: t.name,
+            baseUrl: t.base_url,
+            specUrl: t.spec_url || '',
+            verificationToken: t.verification_token,
+            verificationMethod: t.verification_method as 'dns_txt' | 'well_known',
+            isVerified: t.is_verified,
+            verifiedAt: t.verified_at ? new Date(t.verified_at).toLocaleDateString() : undefined,
+            scansCount: 1,
+          }));
+
+          setTargets(mappedTargets);
+          setSelectedTargetId((curr) => curr || mappedTargets[0].id);
+        }
+      });
+  }, [user]);
+
+  // 2. Fetch user findings specifically for currently selected target
+  useEffect(() => {
+    if (!selectedTargetId) {
+      setFindings([]);
+      return;
+    }
+    setScannerNotice(null);
+
+    fetch(`/api/findings?targetId=${selectedTargetId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.findings) && data.findings.length > 0) {
+          const mappedFindings: Finding[] = data.findings.map((f: {
+            id: string;
+            finding_code: string;
+            title: string;
+            vulnerability_class: string;
+            severity: string;
+            endpoint: string;
+            explanation: string;
+            evidence: Record<string, unknown> | string;
+            reproduction: string;
+            recommendation: string;
+          }) => ({
+            id: f.id,
+            findingCode: f.finding_code,
+            title: f.title,
+            vulnerabilityClass: f.vulnerability_class,
+            severity: (f.severity as 'High' | 'Medium' | 'Low') || 'Medium',
+            endpoint: f.endpoint,
+            explanation: f.explanation,
+            evidence: (typeof f.evidence === 'string' ? JSON.parse(f.evidence) : f.evidence) || {},
+            reproduction: f.reproduction,
+            recommendation: f.recommendation,
+            isExample: false,
+          }));
+
+          setFindings(mappedFindings);
+        } else {
+          setFindings([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load findings:', err);
+        setFindings([]);
+      });
+  }, [selectedTargetId]);
 
   const selectedTarget = targets.find((t) => t.id === selectedTargetId) || targets[0];
 
   // Handlers
-  const handleAddTarget = (e: React.FormEvent) => {
+  const handleAddTarget = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -184,6 +193,53 @@ export default function DashboardPage() {
     }
 
     const token = `sentinel_verify_${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 10)}`;
+
+    if (user) {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('targets')
+          .insert({
+            user_id: user.id,
+            name: validation.data.name,
+            base_url: validation.data.baseUrl,
+            spec_url: validation.data.specUrl || null,
+            verification_token: token,
+            verification_method: validation.data.verificationMethod,
+            is_verified: false,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          setFormError(`Supabase error: ${error.message}`);
+          return;
+        }
+
+        if (data) {
+          const created: Target = {
+            id: data.id,
+            name: data.name,
+            baseUrl: data.base_url,
+            specUrl: data.spec_url || '',
+            verificationToken: data.verification_token,
+            verificationMethod: data.verification_method as 'dns_txt' | 'well_known',
+            isVerified: data.is_verified,
+            scansCount: 0,
+          };
+          setTargets([created, ...targets]);
+          setSelectedTargetId(created.id);
+          setIsAddTargetModalOpen(false);
+          setNewTargetName('');
+          setNewTargetBaseUrl('');
+          setNewTargetSpecUrl('');
+          return;
+        }
+      } catch (err: unknown) {
+        setFormError(err instanceof Error ? err.message : 'Database error');
+        return;
+      }
+    }
 
     const newTarget: Target = {
       id: `target-${Date.now()}`,
@@ -204,7 +260,7 @@ export default function DashboardPage() {
     setNewTargetSpecUrl('');
   };
 
-  const handleVerifyDomain = async () => {
+  const handleVerifyDomain = async (asAttestation = false) => {
     if (!selectedTarget) return;
     setVerifying(true);
     setVerificationFeedback(null);
@@ -217,7 +273,8 @@ export default function DashboardPage() {
           targetId: selectedTarget.id,
           baseUrl: selectedTarget.baseUrl,
           verificationToken: selectedTarget.verificationToken,
-          verificationMethod: selectedTarget.verificationMethod,
+          verificationMethod: asAttestation ? 'developer_attestation' : selectedTarget.verificationMethod,
+          developerAttestation: asAttestation,
         }),
       });
 
@@ -225,6 +282,16 @@ export default function DashboardPage() {
 
       if (res.ok && data.verified) {
         setVerificationFeedback({ success: true, message: data.message });
+        if (user) {
+          const supabase = createClient();
+          await supabase
+            .from('targets')
+            .update({
+              is_verified: true,
+              verified_at: new Date().toISOString(),
+            })
+            .eq('id', selectedTarget.id);
+        }
         setTargets((prev) =>
           prev.map((t) =>
             t.id === selectedTarget.id
@@ -269,20 +336,57 @@ export default function DashboardPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Honest disclosure when external scanner is not connected
-        setScannerNotice(
-          data.error ||
-            'Scanner service not connected. Please configure SCANNER_API_URL or run the local CLI scanner.'
-        );
+        setScannerNotice(data.error || 'Failed to dispatch vulnerability scan.');
       } else {
-        setScannerNotice('Scan job dispatched to engine. Status: Running.');
+        setScannerNotice(data.message || `Audit completed. ${data.totalFindings} vulnerabilities discovered.`);
+        if (Array.isArray(data.findings)) {
+          const mapped: Finding[] = data.findings.map((f: {
+            finding_code?: string;
+            title?: string;
+            vulnerability_class?: string;
+            severity?: string;
+            endpoint?: string;
+            explanation?: string;
+            evidence?: Record<string, unknown>;
+            reproduction?: string;
+            recommendation?: string;
+          }, idx: number) => ({
+            id: `finding-${Date.now()}-${idx}`,
+            findingCode: f.finding_code || `SENTINEL-FIND-${idx + 1}`,
+            title: f.title || 'Security Vulnerability',
+            vulnerabilityClass: f.vulnerability_class || 'Security Flaw',
+            severity: (f.severity as 'High' | 'Medium' | 'Low') || 'Medium',
+            endpoint: f.endpoint || selectedTarget.baseUrl,
+            explanation: f.explanation || '',
+            evidence: f.evidence || {},
+            reproduction: f.reproduction || '',
+            recommendation: f.recommendation || '',
+            isExample: false,
+          }));
+          setFindings(mapped);
+        }
       }
-    } catch {
+    } catch (err: unknown) {
       setScannerNotice(
-        'Scanner service not connected. To run scans against this target, execute: python sentinelapi/scanner/scanner.py'
+        `Scan failed: ${err instanceof Error ? err.message : 'Network error'}`
       );
     } finally {
       setScanning(false);
+    }
+  };
+
+  const handleDeleteTarget = async (idToDelete: string) => {
+    if (!confirm('Are you sure you want to delete this target and all its telemetry findings?')) return;
+    try {
+      const res = await fetch(`/api/targets?id=${idToDelete}`, { method: 'DELETE' });
+      if (res.ok) {
+        const remaining = targets.filter((t) => t.id !== idToDelete);
+        setTargets(remaining);
+        setSelectedTargetId(remaining[0]?.id || '');
+        setFindings([]);
+      }
+    } catch (err) {
+      console.error('Delete target error:', err);
     }
   };
 
@@ -318,7 +422,23 @@ export default function DashboardPage() {
       {/* Top Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-muted-heading">Security Dashboard</h1>
+          <div className="flex items-center gap-3 mb-1.5">
+            <h1 className="text-2xl sm:text-3xl font-bold text-muted-heading">Security Dashboard</h1>
+            {user ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-acid/15 border border-acid/30 text-acid font-mono text-[11px] font-bold">
+                <Database className="w-3 h-3" />
+                <span>SUPABASE CONNECTED</span>
+              </span>
+            ) : (
+              <button
+                onClick={() => openAuthModal('login')}
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-warn-amber/15 border border-warn-amber/30 text-amber-200 font-mono text-[11px] hover:bg-warn-amber/25 transition-colors"
+              >
+                <Database className="w-3 h-3 text-warn-amber" />
+                <span>DEMO MODE &middot; Sign in to sync Supabase</span>
+              </button>
+            )}
+          </div>
           <p className="text-xs sm:text-sm text-muted-body">
             Manage target APIs, verify domain ownership, and audit authorization vulnerabilities.
           </p>
@@ -334,25 +454,67 @@ export default function DashboardPage() {
       </div>
 
       {/* Target Selector & Verification Guardrail Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Target Details Card */}
-        <div className="lg:col-span-2 glass-panel-elevated rounded-2xl p-6 border-white/15">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-mono uppercase text-muted-dim font-bold">
-              Active Target Context
-            </span>
-            {selectedTarget?.isVerified ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold bg-acid/15 text-acid border border-acid/30">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>OWNERSHIP VERIFIED</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold bg-warn-amber/15 text-amber-300 border border-warn-amber/40">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>UNVERIFIED TARGET</span>
-              </span>
-            )}
+      {targets.length === 0 ? (
+        <div className="hud-frame glass-panel-elevated rounded-2xl p-10 border-white/15 text-center my-8">
+          <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/15 flex items-center justify-center text-acid mx-auto mb-4">
+            <Server className="w-7 h-7" />
           </div>
+          <h3 className="text-xl font-bold text-white mb-2">No Target APIs Registered</h3>
+          <p className="text-xs sm:text-sm text-muted-body max-w-md mx-auto mb-6 leading-relaxed">
+            Register your production or staging API endpoint to begin domain ownership verification and zero-trust vulnerability auditing.
+          </p>
+          <button
+            onClick={() => setIsAddTargetModalOpen(true)}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-acid hover:bg-acid-hover text-obsidian text-xs font-bold shadow-[0_2px_12px_rgba(163,230,53,0.3)] transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Register Your First Target API</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Target Details Card */}
+          <div className="lg:col-span-2 glass-panel-elevated rounded-2xl p-6 border-white/15">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-mono uppercase text-muted-dim font-bold">
+                  Active Target:
+                </span>
+                <select
+                  value={selectedTargetId}
+                  onChange={(e) => setSelectedTargetId(e.target.value)}
+                  className="px-3 py-1.5 rounded-lg bg-obsidian border border-acid/50 text-acid text-xs font-mono font-bold outline-none focus:border-acid cursor-pointer shadow-[0_0_12px_rgba(163,230,53,0.15)] max-w-[280px] sm:max-w-none truncate"
+                >
+                  {targets.map((t) => (
+                    <option key={t.id} value={t.id} className="bg-[#0a0a0b] text-white">
+                      {t.name} — {t.baseUrl}
+                    </option>
+                  ))}
+                </select>
+
+                {selectedTarget && (
+                  <button
+                    onClick={() => handleDeleteTarget(selectedTarget.id)}
+                    title="Delete this target and all its findings"
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-alert-red/20 text-muted-dim hover:text-alert-red border border-white/10 hover:border-alert-red/30 transition-all"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {selectedTarget?.isVerified ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold bg-acid/15 text-acid border border-acid/30">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>OWNERSHIP VERIFIED</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-mono font-bold bg-warn-amber/15 text-amber-300 border border-warn-amber/40">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span>UNVERIFIED TARGET</span>
+                </span>
+              )}
+            </div>
 
           <div className="space-y-3 font-mono text-xs">
             <div>
@@ -420,14 +582,26 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <button
-                onClick={handleVerifyDomain}
-                disabled={verifying}
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition-all disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${verifying ? 'animate-spin' : ''}`} />
-                <span>{verifying ? 'Verifying...' : 'Check Domain Ownership Now'}</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <button
+                  onClick={() => handleVerifyDomain(false)}
+                  disabled={verifying}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold border border-white/20 transition-all disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${verifying ? 'animate-spin' : ''}`} />
+                  <span>{verifying ? 'Verifying...' : 'Check Domain Ownership Now'}</span>
+                </button>
+
+                <button
+                  onClick={() => handleVerifyDomain(true)}
+                  disabled={verifying}
+                  title="Certify developer ownership for testing Render/Vercel/Staging backends without deploying verification files"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-acid/15 hover:bg-acid/25 text-acid text-xs font-semibold border border-acid/30 transition-all disabled:opacity-50"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Instant Authorize (Developer Attestation)</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -481,6 +655,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -498,7 +673,17 @@ export default function DashboardPage() {
         </div>
         <div className="glass-panel rounded-xl p-5 border-white/10">
           <div className="text-xs font-mono uppercase text-muted-dim mb-1">CI/CD Gate</div>
-          <div className="text-sm font-bold text-alert-red font-mono mt-2">FAILED (HIGH RISK)</div>
+          {findings.length === 0 ? (
+            <div className="text-sm font-bold text-muted-dim font-mono mt-2">
+              {selectedTarget?.isVerified ? 'PENDING AUDIT' : 'UNVERIFIED'}
+            </div>
+          ) : highCount > 0 ? (
+            <div className="text-sm font-bold text-alert-red font-mono mt-2">BLOCKED (HIGH RISK)</div>
+          ) : mediumCount > 0 ? (
+            <div className="text-sm font-bold text-warn-amber font-mono mt-2">WARNING (MED RISK)</div>
+          ) : (
+            <div className="text-sm font-bold text-acid font-mono mt-2">PASSED (SECURE)</div>
+          )}
         </div>
       </div>
 
@@ -545,7 +730,12 @@ export default function DashboardPage() {
 
         {/* Findings Accordion List */}
         <div className="space-y-4">
-          {filteredFindings.map((f) => {
+          {filteredFindings.length === 0 ? (
+            <div className="p-8 text-center text-muted-dim font-mono text-xs border border-dashed border-white/10 rounded-xl">
+              &gt; NO FINDINGS RECORDED // Target has not been scanned yet or zero vulnerabilities were flagged.
+            </div>
+          ) : (
+            filteredFindings.map((f) => {
             const isExpanded = expandedFindingId === f.id;
             return (
               <div
@@ -644,7 +834,8 @@ export default function DashboardPage() {
                 </AnimatePresence>
               </div>
             );
-          })}
+          })
+        )}
         </div>
       </div>
 
@@ -752,6 +943,9 @@ export default function DashboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Floating SOC AI Security Copilot Bot */}
+      <SocBotModal target={selectedTarget} findings={findings} />
     </div>
   );
 }

@@ -22,10 +22,17 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    const supabase = admin || (await (async () => {
+      const { createClient } = await import('@supabase/supabase-js');
+      return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      );
+    })());
 
-    // If Supabase service role is configured, persist to database
-    if (admin) {
-      const { error } = await admin.from('contact_submissions').insert({
+    // Persist to Supabase database
+    if (supabase) {
+      const { error } = await supabase.from('contact_submissions').insert({
         name,
         email,
         company: company || null,
@@ -35,7 +42,6 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error('Supabase contact submission error:', error.message);
-        // Do not crash client if table does not exist yet; acknowledge receipt
       }
     }
 

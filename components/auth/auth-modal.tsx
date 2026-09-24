@@ -102,8 +102,7 @@ export default function AuthModal({
         });
 
         if (error) {
-          // Generic security message to prevent user enumeration
-          setErrorMessage('Invalid email or password.');
+          setErrorMessage(error.message || 'Invalid email or password.');
           setLoading(false);
           return;
         }

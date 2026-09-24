@@ -198,6 +198,13 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  // Domain ownership verification endpoint
+  if (pathname === '/.well-known/sentinelapi-verify.txt') {
+    res.writeHead(200, { 'Content-Type': 'text/plain', 'Access-Control-Allow-Origin': '*' });
+    res.end('sentinel_verify_sandbox_token');
+    return;
+  }
+
   // OpenAPI Specification endpoint
   if (pathname === '/openapi.json' && method === 'GET') {
     try {
@@ -245,12 +252,21 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  const cleanPath = pathname.replace(/\/+$/, '') || '/';
+
   // GET /orders/:id (VULNERABILITY: BOLA & Excessive Data Exposure)
-  const orderMatch = pathname.match(/^\/orders\/(\d+)$/);
-  if (orderMatch && method === 'GET') {
+  const orderMatch = cleanPath.match(/^\/orders\/(\d+)$/);
+  if (orderMatch) {
+    if (method !== 'GET') {
+      return sendJson(res, 405, { error: 'Method Not Allowed. Please change Postman method from ' + method + ' to GET.', status: 405 });
+    }
+
     const authUser = authenticate(req);
     if (!authUser) {
-      return sendJson(res, 401, { error: 'Unauthorized: missing or invalid Bearer token', status: 401 });
+      return sendJson(res, 401, {
+        error: 'Unauthorized: missing or invalid Bearer token. Please add Header: Authorization = Bearer <token>',
+        status: 401
+      });
     }
 
     const orderId = parseInt(orderMatch[1], 10);
@@ -265,8 +281,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   // GET /users/:id (VULNERABILITY: BOLA & Plaintext Password Exposure)
-  const userMatch = pathname.match(/^\/users\/(\d+)$/);
-  if (userMatch && method === 'GET') {
+  const userMatch = cleanPath.match(/^\/users\/(\d+)$/);
+  if (userMatch) {
+    if (method !== 'GET') {
+      return sendJson(res, 405, { error: 'Method Not Allowed. Please change Postman method to GET.', status: 405 });
+    }
     const authUser = authenticate(req);
     if (!authUser) {
       return sendJson(res, 401, { error: 'Unauthorized: missing or invalid Bearer token', status: 401 });
@@ -278,8 +297,6 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 404, { error: `User ${userId} not found`, status: 404 });
     }
 
-    // BOLA VULNERABILITY: Allows any authenticated user to view other user records
-    // Plaintext password exposure in response
     return sendJson(res, 200, userProfile);
   }
 

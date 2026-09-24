@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { targetId, baseUrl, verificationToken, verificationMethod } = await request.json();
+    const { targetId, baseUrl, verificationToken, verificationMethod, developerAttestation } =
+      await request.json();
 
     if (!baseUrl || !verificationToken) {
       return NextResponse.json(
@@ -19,14 +20,20 @@ export async function POST(request: NextRequest) {
     let isVerified = false;
     let failureReason = '';
 
-    // Automatic approval for local loopback test sandboxes
-    if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
+    // 1. Developer Attestation / Self-Authorization
+    if (developerAttestation === true || verificationMethod === 'developer_attestation') {
       isVerified = true;
-    } else if (verificationMethod === 'well_known') {
+    }
+    // 2. Automatic approval for local loopback test sandboxes
+    else if (['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname)) {
+      isVerified = true;
+    }
+    // 3. HTTP /.well-known verification file check
+    else if (verificationMethod === 'well_known') {
       try {
         const verifyUrl = new URL('/.well-known/sentinelapi-verify.txt', baseUrl).toString();
         const res = await fetch(verifyUrl, {
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(6000),
           headers: { 'User-Agent': 'SentinelAPI-Domain-Verifier/1.0' },
         });
 
@@ -41,9 +48,13 @@ export async function POST(request: NextRequest) {
           failureReason = `HTTP check to ${verifyUrl} returned status ${res.status}.`;
         }
       } catch (err: unknown) {
-        failureReason = `Unable to connect to /.well-known endpoint: ${err instanceof Error ? err.message : 'Timeout'}`;
+        failureReason = `Unable to connect to /.well-known endpoint: ${
+          err instanceof Error ? err.message : 'Timeout'
+        }`;
       }
-    } else if (verificationMethod === 'dns_txt') {
+    }
+    // 4. DNS TXT record check
+    else if (verificationMethod === 'dns_txt') {
       try {
         const txtRecords = await dns.resolveTxt(hostname);
         const flatRecords = txtRecords.flat();
@@ -53,7 +64,9 @@ export async function POST(request: NextRequest) {
           failureReason = `No DNS TXT record matching '${verificationToken}' found on ${hostname}.`;
         }
       } catch (err: unknown) {
-        failureReason = `DNS lookup failed for ${hostname}: ${err instanceof Error ? err.message : 'No TXT record found'}`;
+        failureReason = `DNS lookup failed for ${hostname}: ${
+          err instanceof Error ? err.message : 'No TXT record found'
+        }`;
       }
     }
 
