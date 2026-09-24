@@ -65,7 +65,8 @@ SentinelAPI is a production-grade, zero-trust API security testing and posture p
 ## Project Structure
 
 ```
-├── app/
+├── frontend/
+│   ├── app/
 │   ├── layout.tsx              # Root layout (Space Grotesk + JetBrains Mono, SEO JSON-LD)
 │   ├── page.tsx                # High-impact landing page with 3D hero & threat models
 │   ├── features/page.tsx       # Deep capability matrix & vulnerability coverage
@@ -84,23 +85,23 @@ SentinelAPI is a production-grade, zero-trust API security testing and posture p
 │   ├── manifest.ts             # PWA web manifest
 │   ├── error.tsx               # Global client error boundary
 │   └── not-found.tsx           # Custom 404 handler
-├── components/
+│   ├── components/
 │   ├── hero/                   # Dynamic 3D Three.js constellation canvas & hero UI
 │   ├── layout/                 # Obsidian navbar and comprehensive footer
 │   ├── auth/                   # Supabase AuthContext & modal dialogs
 │   ├── icons/                  # High-fidelity SVG social glyphs (GitHub, X, Google)
 │   └── home/                   # Modular landing page sections
-├── lib/
+│   ├── lib/
 │   ├── supabase/               # SSR client, server, and middleware session helpers
 │   └── validation.ts           # Zod schemas for all forms and targets
-├── supabase/
+├── database/
 │   └── schema.sql              # Complete PostgreSQL database schema with RLS policies
 ├── sentinelapi/                # Standalone CLI scanner & local vulnerable sandbox API
 │   ├── scanner/scanner.py      # Zero-dependency Python 3 scanner engine
 │   ├── vulnerable-api/         # Zero-dependency Node.js mock API with seeded flaws
 │   └── dashboard/index.html    # Standalone single-file HTML audit dashboard
-├── site.config.ts              # Single source of truth for site-wide brand configuration
-└── next.config.mjs             # Hardened security headers (CSP, HSTS, frame options)
+├── frontend/site.config.ts     # Single source of truth for site-wide brand configuration
+└── frontend/next.config.mjs    # Hardened security headers (CSP, HSTS, frame options)
 ```
 
 ---
@@ -132,7 +133,7 @@ SCANNER_API_URL=http://127.0.0.1:5000
 `SCANNER_API_URL` points to the local Express backend. The Next.js server proxies browser requests to it through `/api/sentinel/*`; the browser does not connect to the scanner directly.
 
 ### 3. Initialize Supabase Database
-In your Supabase project's SQL Editor, execute the contents of [`supabase/schema.sql`](file:///d:/amity%20project/supabase/schema.sql). This will provision:
+In your Supabase project's SQL Editor, execute the contents of [`database/schema.sql`](database/schema.sql). This will provision:
 - `profiles` table linked to `auth.users` with automated row creation triggers.
 - `targets` table with domain verification tokens.
 - `scans` and `findings` tables with strict Row-Level Security (RLS) policies.
@@ -155,7 +156,7 @@ node sentinelapi/vulnerable-api/server.js
 ```
 
 ```bash
-cd sentinelapi/backend
+cd backend
 npm install
 npm run dev
 ```
@@ -169,7 +170,7 @@ Open [http://localhost:3000/dashboard](http://localhost:3000/dashboard) and clic
 
 ## Local Scanner Backend & Vulnerability Sandbox
 
-SentinelAPI includes a loopback-only vulnerable API and a TypeScript backend under `sentinelapi/`. Follow [`sentinelapi/backend/README.md`](sentinelapi/backend/README.md) for the current REST backend and its end-to-end demo. The older Python CLI remains available separately.
+SentinelAPI includes a loopback-only vulnerable API under `sentinelapi/` and a TypeScript backend under `backend/`. Follow [`backend/README.md`](backend/README.md) for the current REST backend and its end-to-end demo. The older Python CLI remains available separately.
 
 ### 1. Launch the Vulnerable Test API
 ```bash
@@ -198,7 +199,7 @@ python sentinelapi/scanner/scanner.py --config sentinelapi/scanner/config.exampl
 
 ### Railway hackathon deployment
 
-Use the repository root as the Railway service root. The checked-in `railway.json` builds and starts the Next.js site, scanner backend, and loopback demo API together. Attach a persistent volume mounted at `/data` and set `DATABASE_PATH=/data/sentinel.sqlite`; keep `AUTHORIZED_TARGET_HOSTS` empty. The Railway launcher defaults `PUBLIC_DEMO_MODE` to `true` and pins `SCANNER_API_URL` to the co-hosted backend at `http://127.0.0.1:5000`, so local development values such as port `5050` cannot break the Railway proxy. Set `PUBLIC_DEMO_MODE=false` only when Supabase operator authentication is configured and required. Redeploy after changing settings. Visit `/api/health` for the Railway web health check. See [`sentinelapi/backend/README.md`](sentinelapi/backend/README.md) for the isolation and production-auth notes.
+Use the repository root as the Railway service root. The checked-in `railway.json` builds and starts the Next.js site, scanner backend, and loopback demo API together. Attach a persistent volume mounted at `/data` and set `DATABASE_PATH=/data/sentinel.sqlite`; keep `AUTHORIZED_TARGET_HOSTS` empty. The Railway launcher defaults `PUBLIC_DEMO_MODE` to `true` and pins `SCANNER_API_URL` to the co-hosted backend at `http://127.0.0.1:5000`, so local development values such as port `5050` cannot break the Railway proxy. Set `PUBLIC_DEMO_MODE=false` only when Supabase operator authentication is configured and required. Redeploy after changing settings. Visit `/api/health` for the Railway web health check. See [`backend/README.md`](backend/README.md) for the isolation and production-auth notes.
 
 ### Google and GitHub sign-in
 
@@ -223,7 +224,7 @@ To point your custom domain (e.g., `sentinelapi.io`) to Vercel:
 - [x] **Strict Obsidian Theme Compliance**: Zero blue/cyan/teal across CSS, SVGs, canvas, and lighting.
 - [x] **No Placeholder Copy**: Zero `lorem ipsum`, zero `#` anchor links, zero fake testimonials or logos.
 - [x] **Content Security Policy (CSP)**: Hardened headers configured in `next.config.mjs` including `default-src 'self'`, `frame-ancestors 'none'`, and `X-Content-Type-Options: nosniff`.
-- [x] **Row-Level Security (RLS)**: Enforced across all tables in `supabase/schema.sql`.
+- [x] **Row-Level Security (RLS)**: Enforced across all tables in `database/schema.sql`.
 - [x] **Domain Ownership Protocol**: Enforced before scan execution can proceed.
 - [x] **Legal Disclaimers**: Review banner present on Privacy Policy, Terms of Service, and Acceptable Use.
 - [x] **TypeScript & Static Generation**: `npm run build` verified with 0 errors across all 20 routes.

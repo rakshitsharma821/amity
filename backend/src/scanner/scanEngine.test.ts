@@ -12,7 +12,7 @@ const testDatabaseDir = mkdtempSync(join(tmpdir(), 'sentinelapi-rest-test-'));
 process.env.DATABASE_PATH = join(testDatabaseDir, 'sentinel.sqlite');
 const [{ app }, { store }] = await Promise.all([import('../app.js'), import('../db/database.js')]);
 
-const demoPath = fileURLToPath(new URL('../../../vulnerable-api/server.js', import.meta.url));
+const demoPath = fileURLToPath(new URL('../../../sentinelapi/vulnerable-api/server.js', import.meta.url));
 const waitForDemo = async (baseUrl: string, child: ChildProcess) => {
   for (let attempt = 0; attempt < 80; attempt += 1) {
     if (child.exitCode !== null) throw new Error(`Demo server exited with status ${child.exitCode}`);

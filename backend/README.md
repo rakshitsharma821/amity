@@ -19,12 +19,12 @@ The sandbox binds to `127.0.0.1:4000` and serves its OpenAPI document at `/opena
 Terminal 2 — backend:
 
 ```sh
-cd sentinelapi/backend
+cd backend
 npm install
 npm run dev
 ```
 
-The backend binds to `127.0.0.1:5000` and stores scan/target records in `sentinelapi/backend/data/sentinel.sqlite`.
+The backend binds to `127.0.0.1:5000` and stores scan/target records in `backend/data/sentinel.sqlite`.
 
 ## Deploy the complete demo to Railway
 

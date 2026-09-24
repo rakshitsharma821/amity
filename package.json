@@ -4,11 +4,11 @@
   "description": "Please see the full documentation, architecture, and quickstart instructions in [`sentinelapi/README.md`](file:///d:/amity%20project/sentinelapi/README.md).",
   "main": "index.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "build:backend": "tsc -p sentinelapi/backend/tsconfig.build.json",
-    "build:railway": "npm ci --include=dev --prefix sentinelapi/backend && npm run build && npm run build:backend",
-    "start": "next start",
+    "dev": "next dev frontend",
+    "build": "next build frontend",
+    "build:backend": "tsc -p backend/tsconfig.build.json",
+    "build:railway": "npm ci --include=dev --prefix backend && npm run build && npm run build:backend",
+    "start": "next start frontend",
     "start:railway": "node scripts/start-railway.mjs",
     "lint": "next lint"
   },

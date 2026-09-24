@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { parseOpenApi } from './openapiParser.js';
 
 test('OpenAPI parser extracts operations, resources, sensitive fields, and inferred links', async () => {
-  const specPath = fileURLToPath(new URL('../../../../vulnerable-api/openapi.json', import.meta.url));
+  const specPath = fileURLToPath(new URL('../../../../sentinelapi/vulnerable-api/openapi.json', import.meta.url));
   const spec = JSON.parse(await readFile(specPath, 'utf8')) as Record<string, unknown>;
   const parsed = parseOpenApi(spec);
   assert.ok(parsed.endpoints.some((endpoint) => endpoint.id === 'GET /orders/{id}'));

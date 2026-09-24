@@ -50,10 +50,10 @@ process.once('SIGTERM', () => shutdown(0));
 process.once('SIGINT', () => shutdown(0));
 
 start('demo-api', ['sentinelapi/vulnerable-api/server.js'], { ...process.env, PORT: '4000' });
-start('scanner-backend', ['sentinelapi/backend/dist/server.js'], {
+start('scanner-backend', ['backend/dist/server.js'], {
   ...process.env,
   HOST: '127.0.0.1',
   PORT: '5000',
   DATABASE_PATH: process.env.DATABASE_PATH || '/data/sentinel.sqlite',
 });
-start('next-web', ['node_modules/next/dist/bin/next', 'start', '--hostname', '0.0.0.0', '--port', process.env.PORT || '3000']);
+start('next-web', ['node_modules/next/dist/bin/next', 'start', 'frontend', '--hostname', '0.0.0.0', '--port', process.env.PORT || '3000']);
