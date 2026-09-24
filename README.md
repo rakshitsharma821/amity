@@ -199,6 +199,11 @@ python sentinelapi/scanner/scanner.py --config sentinelapi/scanner/config.exampl
 ### Railway hackathon deployment
 
 Use the repository root as the Railway service root. The checked-in `railway.json` builds and starts the Next.js site, scanner backend, and loopback demo API together. Attach a persistent volume mounted at `/data` and set `DATABASE_PATH=/data/sentinel.sqlite`; keep `AUTHORIZED_TARGET_HOSTS` empty. The Railway launcher defaults `PUBLIC_DEMO_MODE` to `true` and pins `SCANNER_API_URL` to the co-hosted backend at `http://127.0.0.1:5000`, so local development values such as port `5050` cannot break the Railway proxy. Set `PUBLIC_DEMO_MODE=false` only when Supabase operator authentication is configured and required. Redeploy after changing settings. Visit `/api/health` for the Railway web health check. See [`sentinelapi/backend/README.md`](sentinelapi/backend/README.md) for the isolation and production-auth notes.
+
+### Google and GitHub sign-in
+
+The login, signup, and modal flows use Supabase OAuth PKCE with the `/auth/callback` route to exchange the returned code for a cookie-backed session. In Supabase **Authentication → URL Configuration**, set the Site URL to `https://sentinelapi-production.up.railway.app` and add `https://sentinelapi-production.up.railway.app/auth/callback` plus `http://localhost:3000/auth/callback` to the redirect allow list. Enable Google and GitHub under **Authentication → Providers**, and add each provider's client ID and secret. In Google Cloud and GitHub OAuth app settings, set the provider callback URL shown in the Supabase provider settings (the Supabase `/auth/v1/callback` URL); it is different from SentinelAPI's `/auth/callback`. Keep `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` configured in Railway for the build and runtime.
+
 4. Click **Deploy**. Vercel will run `npm run build` and output an optimized production deployment.
 
 ---

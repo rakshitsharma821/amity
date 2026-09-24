@@ -6,6 +6,7 @@ import { Eye, EyeOff, Lock, Mail, Shield, X, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GithubIcon, GoogleIcon } from '@/components/icons/social-icons';
 import { createClient } from '@/lib/supabase/client';
+import { getAuthCallbackUrl } from '@/lib/supabase/auth-redirect';
 import { loginSchema, signupSchema } from '@/lib/validation';
 
 interface AuthModalProps {
@@ -137,7 +138,7 @@ export default function AuthModal({
           email: result.data.email,
           password: result.data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: getAuthCallbackUrl('/dashboard'),
           },
         });
 
@@ -179,13 +180,17 @@ export default function AuthModal({
   };
 
   const handleOAuth = async (provider: 'github' | 'google') => {
+    if (mode === 'signup' && !acceptedTerms) {
+      setErrorMessage('Please accept the Terms and Privacy Policy before creating an account.');
+      return;
+    }
     setLoading(true);
     const supabase = createClient();
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: getAuthCallbackUrl('/dashboard'),
         },
       });
       if (error) {
