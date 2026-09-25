@@ -13,15 +13,16 @@ interface ApiNode {
 }
 
 const NODES_DATA: ApiNode[] = [
-  { name: 'Auth Login', path: '/api/v1/auth/login', position: [-6, 3, 2], isVulnerable: true, vulnType: 'No Rate Limit', severity: 'medium' },
-  { name: 'Users Profile', path: '/api/v1/users/{id}', position: [-3, 5, -2], isVulnerable: true, vulnType: 'Data Exposure (PAN)', severity: 'high' },
-  { name: 'Orders Detail', path: '/api/v1/orders/{id}', position: [5, 2, 4], isVulnerable: true, vulnType: 'BOLA / IDOR Flaw', severity: 'critical' },
-  { name: 'Payments Tokenize', path: '/api/v1/payments/charge', position: [7, -3, -1], isVulnerable: false },
-  { name: 'Admin Metrics', path: '/api/v1/admin/metrics', position: [3, 6, -5], isVulnerable: false },
-  { name: 'OAuth Callback', path: '/api/v1/auth/callback', position: [-7, -2, -3], isVulnerable: false },
-  { name: 'Webhook Events', path: '/api/v1/webhooks', position: [-2, -4, 3], isVulnerable: false },
-  { name: 'Products Catalog', path: '/api/v1/products', position: [2, -5, 2], isVulnerable: false },
-  { name: 'Inventory Sync', path: '/api/v1/inventory', position: [6, -1, -6], isVulnerable: false },
+  { name: 'Auth Login', path: 'POST /login', position: [-6, 3, 2], isVulnerable: true, vulnType: 'Missing Rate Limit (API4:2023)', severity: 'medium' },
+  { name: 'Orders Detail', path: 'GET /orders/{id}', position: [5, 2, 4], isVulnerable: true, vulnType: 'BOLA / IDOR Breach (API1:2023)', severity: 'critical' },
+  { name: 'Users Profile', path: 'GET /users/{id}', position: [-3, 5, -2], isVulnerable: true, vulnType: 'Plaintext Password Leak (API3:2023)', severity: 'high' },
+  { name: 'Payment Card', path: 'GET /orders/{id}/payment', position: [7, -3, -1], isVulnerable: true, vulnType: 'PCI-DSS Luhn Card Leak (API3:2023)', severity: 'high' },
+  { name: 'Admin Role Mutation', path: 'PUT /admin/users/{id}/role', position: [3, 6, -5], isVulnerable: true, vulnType: 'BFLA Privilege Escalation (API5:2023)', severity: 'critical' },
+  { name: 'Billing Invoice', path: 'GET /orders/{id}/invoice', position: [-7, -2, -3], isVulnerable: true, vulnType: 'Downstream Financial BOLA', severity: 'high' },
+  { name: 'Logistics Shipment', path: 'GET /orders/{id}/shipment', position: [-2, -4, 3], isVulnerable: true, vulnType: 'PII Physical Address Exposure', severity: 'medium' },
+  { name: 'User Profile Update', path: 'PUT /users/{id}', position: [2, -5, 2], isVulnerable: true, vulnType: 'Mass Assignment (API6:2023)', severity: 'high' },
+  { name: 'My Orders (Self)', path: 'GET /me/orders', position: [6, -1, -6], isVulnerable: false, vulnType: 'Authenticated Baseline' },
+  { name: 'OpenAPI Spec', path: 'GET /openapi.json', position: [0, -6, 4], isVulnerable: false, vulnType: 'Contract Definition' },
 ];
 
 export default function ScrollUniverseCanvas({

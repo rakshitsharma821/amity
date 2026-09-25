@@ -61,6 +61,8 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const isDemoSession = request.cookies.get('vanguard_demo_session')?.value === 'true';
+
   // Guard protected routes
   const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
   const isAuthRoute =
@@ -68,13 +70,13 @@ export async function updateSession(request: NextRequest) {
 
   // Local judge/demo runs can use the real scanner flow without a hosted auth project.
   // When production auth is configured, keep the dashboard behind a signed-in session.
-  if (!user && isDashboardRoute && process.env.NODE_ENV === 'production') {
+  if (!user && !isDemoSession && isDashboardRoute && process.env.NODE_ENV === 'production' && process.env.PUBLIC_DEMO_MODE !== 'true') {
     const redirectUrl = new URL('/login', request.url);
     redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && isAuthRoute) {
+  if ((user || isDemoSession) && isAuthRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

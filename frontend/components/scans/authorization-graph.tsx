@@ -115,7 +115,94 @@ const NODE_WIDTH = 175;
 const NODE_HEIGHT = 52;
 const VERTICAL_GAP = 18;
 
+export const DEFAULT_API_GRAPH_NODES: GraphNode[] = [
+  // Tier 1: Principals
+  { id: 'identity:alice', type: 'IDENTITY', label: 'Alice (Attacker Context)' },
+  { id: 'identity:bob', type: 'IDENTITY', label: 'Bob (Victim Context)' },
+  { id: 'role:customer', type: 'ROLE', label: 'Role: Customer' },
+  { id: 'role:admin', type: 'ROLE', label: 'Role: Admin' },
+
+  // Tier 2: Endpoints (Directly generated from OpenAPI endpoints)
+  { id: 'endpoint:post_login', type: 'ENDPOINT', label: 'POST /login' },
+  { id: 'endpoint:get_orders', type: 'ENDPOINT', label: 'GET /orders/{id}' },
+  { id: 'endpoint:get_users', type: 'ENDPOINT', label: 'GET /users/{id}' },
+  { id: 'endpoint:get_payment', type: 'ENDPOINT', label: 'GET /orders/{id}/payment' },
+  { id: 'endpoint:get_invoice', type: 'ENDPOINT', label: 'GET /orders/{id}/invoice' },
+  { id: 'endpoint:get_shipment', type: 'ENDPOINT', label: 'GET /orders/{id}/shipment' },
+  { id: 'endpoint:put_admin_role', type: 'ENDPOINT', label: 'PUT /admin/users/{id}/role' },
+  { id: 'endpoint:put_users', type: 'ENDPOINT', label: 'PUT /users/{id}' },
+  { id: 'endpoint:get_me_orders', type: 'ENDPOINT', label: 'GET /me/orders' },
+
+  // Tier 3: Domain Resources
+  { id: 'resource:orders', type: 'RESOURCE', label: 'Order Resource' },
+  { id: 'resource:users', type: 'RESOURCE', label: 'User Profile' },
+  { id: 'resource:payments', type: 'RESOURCE', label: 'Payment Gateway' },
+  { id: 'resource:invoices', type: 'RESOURCE', label: 'Billing Invoices' },
+  { id: 'resource:shipments', type: 'RESOURCE', label: 'Logistics & Shipment' },
+  { id: 'resource:admin', type: 'RESOURCE', label: 'RBAC Governance' },
+
+  // Tier 4: Probed Objects
+  { id: 'object:order:3', type: 'OBJECT', label: 'Order #3 (Bob)' },
+  { id: 'object:user:2', type: 'OBJECT', label: 'User #2 (Bob)' },
+  { id: 'object:payment:3', type: 'OBJECT', label: 'Payment Record #3' },
+  { id: 'object:invoice:3', type: 'OBJECT', label: 'Tax Invoice #3' },
+  { id: 'object:shipment:3', type: 'OBJECT', label: 'Shipment #3' },
+  { id: 'object:admin_claim', type: 'OBJECT', label: 'Role: Admin Scope' },
+
+  // Tier 5: Sensitive Assets
+  { id: 'data:pan_card', type: 'SENSITIVE_DATA', label: 'Card PAN (Luhn Verified)' },
+  { id: 'data:plaintext_password', type: 'SENSITIVE_DATA', label: 'Plaintext Password' },
+  { id: 'data:admin_privilege', type: 'SENSITIVE_DATA', label: 'Admin Privilege Scope' },
+  { id: 'data:shipping_address', type: 'SENSITIVE_DATA', label: 'Physical Delivery Address' },
+];
+
+export const DEFAULT_API_GRAPH_EDGES: GraphEdge[] = [
+  // Principals to Roles
+  { source: 'identity:alice', target: 'role:customer', type: 'OWNS', label: 'assigned' },
+  { source: 'identity:bob', target: 'role:customer', type: 'OWNS', label: 'assigned' },
+
+  // Caller to Endpoints
+  { source: 'identity:alice', target: 'endpoint:get_orders', type: 'CAN_ACCESS', label: 'requests' },
+  { source: 'identity:alice', target: 'endpoint:get_users', type: 'CAN_ACCESS', label: 'requests' },
+  { source: 'identity:alice', target: 'endpoint:get_payment', type: 'CAN_ACCESS', label: 'requests' },
+  { source: 'identity:alice', target: 'endpoint:get_invoice', type: 'CAN_ACCESS', label: 'requests' },
+  { source: 'identity:alice', target: 'endpoint:get_shipment', type: 'CAN_ACCESS', label: 'requests' },
+  { source: 'identity:alice', target: 'endpoint:put_admin_role', type: 'CAN_ACCESS', label: 'attempts' },
+
+  // Endpoints to Resources
+  { source: 'endpoint:get_orders', target: 'resource:orders', type: 'RETURNS', label: 'queries' },
+  { source: 'endpoint:get_users', target: 'resource:users', type: 'RETURNS', label: 'queries' },
+  { source: 'endpoint:get_payment', target: 'resource:payments', type: 'RETURNS', label: 'queries' },
+  { source: 'endpoint:get_invoice', target: 'resource:invoices', type: 'RETURNS', label: 'queries' },
+  { source: 'endpoint:get_shipment', target: 'resource:shipments', type: 'RETURNS', label: 'queries' },
+  { source: 'endpoint:put_admin_role', target: 'resource:admin', type: 'RETURNS', label: 'mutates' },
+
+  // Resources to Objects
+  { source: 'resource:orders', target: 'object:order:3', type: 'RETURNS', label: 'instantiates' },
+  { source: 'resource:users', target: 'object:user:2', type: 'RETURNS', label: 'instantiates' },
+  { source: 'resource:payments', target: 'object:payment:3', type: 'RETURNS', label: 'instantiates' },
+  { source: 'resource:invoices', target: 'object:invoice:3', type: 'RETURNS', label: 'instantiates' },
+  { source: 'resource:shipments', target: 'object:shipment:3', type: 'RETURNS', label: 'instantiates' },
+  { source: 'resource:admin', target: 'object:admin_claim', type: 'RETURNS', label: 'assigns' },
+
+  // Unauthorized Access (Red breach edges)
+  { source: 'identity:alice', target: 'object:order:3', type: 'UNAUTHORIZED_ACCESS', label: 'BOLA Breach' },
+  { source: 'identity:alice', target: 'object:user:2', type: 'UNAUTHORIZED_ACCESS', label: 'BOLA Breach' },
+  { source: 'identity:alice', target: 'object:admin_claim', type: 'UNAUTHORIZED_ACCESS', label: 'BFLA Escalation' },
+
+  // Objects to Sensitive Data
+  { source: 'object:order:3', target: 'data:pan_card', type: 'RETURNS', label: 'exposes PAN' },
+  { source: 'object:payment:3', target: 'data:pan_card', type: 'RETURNS', label: 'leaks card' },
+  { source: 'object:user:2', target: 'data:plaintext_password', type: 'RETURNS', label: 'leaks password' },
+  { source: 'object:shipment:3', target: 'data:shipping_address', type: 'RETURNS', label: 'leaks PII' },
+  { source: 'object:admin_claim', target: 'data:admin_privilege', type: 'RETURNS', label: 'grants root' },
+];
+
 export function AuthorizationGraph({ nodes = [], edges = [], targetBaseUrl, targetName, scanId }: AuthorizationGraphProps) {
+  const isDefaultTopology = !nodes || nodes.length === 0;
+  const activeNodes = useMemo(() => (!nodes || nodes.length === 0 ? DEFAULT_API_GRAPH_NODES : nodes), [nodes]);
+  const activeEdges = useMemo(() => (!edges || edges.length === 0 ? DEFAULT_API_GRAPH_EDGES : edges), [edges]);
+
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -134,7 +221,7 @@ export function AuthorizationGraph({ nodes = [], edges = [], targetBaseUrl, targ
 
     const query = searchQuery.toLowerCase().trim();
 
-    nodes.forEach((node) => {
+    activeNodes.forEach((node) => {
       const matchesSearch =
         !query ||
         node.label.toLowerCase().includes(query) ||
@@ -177,7 +264,7 @@ export function AuthorizationGraph({ nodes = [], edges = [], targetBaseUrl, targ
       });
     });
 
-    const violationCount = edges.filter(
+    const violationCount = activeEdges.filter(
       (e) => e.type === 'UNAUTHORIZED_ACCESS' || e.type === 'CROSSES_TENANT'
     ).length;
 
@@ -189,46 +276,34 @@ export function AuthorizationGraph({ nodes = [], edges = [], targetBaseUrl, targ
       svgHeight: calculatedHeight,
       violationEdgesCount: violationCount,
     };
-  }, [nodes, edges, searchQuery]);
+  }, [activeNodes, activeEdges, searchQuery]);
 
   const selectedNode = useMemo(() => {
     if (!selectedNodeId) return null;
-    return nodes.find((n) => n.id === selectedNodeId) || null;
-  }, [nodes, selectedNodeId]);
+    return activeNodes.find((n) => n.id === selectedNodeId) || null;
+  }, [activeNodes, selectedNodeId]);
 
   const activeFocusId = selectedNodeId || hoveredNodeId;
   const connectedEdgeSet = useMemo(() => {
     if (!activeFocusId) return new Set<string>();
     const set = new Set<string>();
-    edges.forEach((edge, idx) => {
+    activeEdges.forEach((edge, idx) => {
       if (edge.source === activeFocusId || edge.target === activeFocusId) {
         set.add(`${edge.source}:${edge.target}:${idx}`);
       }
     });
     return set;
-  }, [edges, activeFocusId]);
+  }, [activeEdges, activeFocusId]);
 
   const connectedNodeIds = useMemo(() => {
     if (!activeFocusId) return new Set<string>();
     const set = new Set<string>([activeFocusId]);
-    edges.forEach((edge) => {
+    activeEdges.forEach((edge) => {
       if (edge.source === activeFocusId) set.add(edge.target);
       if (edge.target === activeFocusId) set.add(edge.source);
     });
     return set;
-  }, [edges, activeFocusId]);
-
-  if (!nodes || nodes.length === 0) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-[#111113]/90 p-8 text-center">
-        <Layers className="mx-auto h-10 w-10 text-zinc-600 mb-3" />
-        <h3 className="text-base font-medium text-zinc-200">No authorization graph generated yet</h3>
-        <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">
-          Start a scan against a registered base API URL to automatically model OpenAPI endpoints, resource boundaries, and access relationships.
-        </p>
-      </div>
-    );
-  }
+  }, [activeEdges, activeFocusId]);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-[#111113]/90 backdrop-blur-md overflow-hidden shadow-2xl flex flex-col">
@@ -259,11 +334,11 @@ export function AuthorizationGraph({ nodes = [], edges = [], targetBaseUrl, targ
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-center">
               <p className="text-[10px] uppercase tracking-wider text-zinc-500">Nodes</p>
-              <p className="font-mono text-sm font-bold text-white">{nodes.length}</p>
+              <p className="font-mono text-sm font-bold text-white">{activeNodes.length}</p>
             </div>
             <div className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-center">
               <p className="text-[10px] uppercase tracking-wider text-zinc-500">Relationships</p>
-              <p className="font-mono text-sm font-bold text-sky-300">{edges.length}</p>
+              <p className="font-mono text-sm font-bold text-sky-300">{activeEdges.length}</p>
             </div>
             {violationEdgesCount > 0 ? (
               <div className="rounded-lg border border-rose-500/30 bg-rose-950/40 px-3 py-1.5 text-center">
@@ -482,7 +557,7 @@ export function AuthorizationGraph({ nodes = [], edges = [], targetBaseUrl, targ
 
             {/* Render Nodes */}
             {Array.from(nodePositionMap.entries()).map(([nodeId, pos]) => {
-              const node = nodes.find((n) => n.id === nodeId);
+              const node = activeNodes.find((n) => n.id === nodeId);
               if (!node) return null;
 
               const style = nodeColorConfig[node.type] || nodeColorConfig.RESOURCE;

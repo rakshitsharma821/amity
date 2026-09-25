@@ -127,21 +127,17 @@ export default function ApiUniverseCanvas({ onNodeHover, onScannerAlert }: ApiUn
     const nodeMeshes: THREE.Mesh[] = [];
 
     const endpoints = [
-      '/login',
-      '/users/{id}',
-      '/orders/{id}',
-      '/me/orders',
-      '/payments',
-      '/oauth/token',
-      '/billing/invoices',
-      '/webhooks',
-      '/checkout',
-      '/profiles',
-      '/keys/rotate',
-      '/audit/logs',
-      '/admin/metrics',
-      '/tenants/{id}',
-      '/v1/search',
+      'POST /login',
+      'GET /orders/{id}',
+      'GET /users/{id}',
+      'GET /orders/{id}/payment',
+      'PUT /admin/users/{id}/role',
+      'GET /orders/{id}/invoice',
+      'GET /orders/{id}/shipment',
+      'PUT /users/{id}',
+      'GET /me/orders',
+      'DELETE /orders/{id}',
+      'GET /openapi.json',
     ];
 
     const healthyGeo = new THREE.SphereGeometry(0.65, 14, 14);
@@ -168,22 +164,28 @@ export default function ApiUniverseCanvas({ onNodeHover, onScannerAlert }: ApiUn
 
       if (i === 1) {
         isVulnerable = true;
-        vulnType = 'BOLA / IDOR';
+        vulnType = 'BOLA / IDOR Breach';
         mat = vulnerableMat;
         geo = vulnerableGeo;
-        ep = '/orders/{id}';
+        ep = 'GET /orders/{id}';
       } else if (i === 4) {
         isVulnerable = true;
-        vulnType = 'Excessive Data Exposure';
+        vulnType = 'PCI-DSS Card Leak (Luhn Verified)';
         mat = vulnerableMat;
         geo = vulnerableGeo;
-        ep = '/users/{id}';
+        ep = 'GET /orders/{id}/payment';
       } else if (i === 7) {
         isVulnerable = true;
-        vulnType = 'Missing Rate Limit';
+        vulnType = 'Missing Rate Limit (API4:2023)';
         mat = amberMat;
         geo = vulnerableGeo;
-        ep = '/login';
+        ep = 'POST /login';
+      } else if (i === 10) {
+        isVulnerable = true;
+        vulnType = 'BFLA Privilege Escalation';
+        mat = vulnerableMat;
+        geo = vulnerableGeo;
+        ep = 'PUT /admin/users/{id}/role';
       }
 
       const mesh = new THREE.Mesh(geo, mat.clone());
