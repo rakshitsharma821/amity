@@ -60,7 +60,7 @@ export default function DocsPage() {
           <span>DOCUMENTATION & SPECIFICATION</span>
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-muted-heading mb-4">
-          SentinelAPI Documentation
+          Vanguarda-api Documentation
         </h1>
         <p className="text-lg text-muted-body leading-relaxed">
           Learn how to verify your API domain, configure dual-user authentication profiles, and triage zero-trust authorization findings.
@@ -136,7 +136,7 @@ export default function DocsPage() {
               2. Mandatory Ownership Verification
             </h2>
             <p className="text-sm text-muted-body mb-6 leading-relaxed">
-              SentinelAPI offers two non-intrusive methods to verify domain ownership. Verification takes under 60 seconds.
+              Vanguarda-api offers two non-intrusive methods to verify domain ownership. Verification takes under 60 seconds.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -146,9 +146,9 @@ export default function DocsPage() {
                   Add a TXT record to your target domain through your DNS provider (Cloudflare, Route53, etc.).
                 </p>
                 <div className="p-3 rounded-lg bg-black/40 font-mono text-xs text-muted-dim">
-                  <span className="text-white">Record:</span> @ or _sentinelapi-verify<br />
+                  <span className="text-white">Record:</span> @ or _vanguarda-api-verify<br />
                   <span className="text-white">Type:</span> TXT<br />
-                  <span className="text-white">Value:</span> sentinel_verify_a8f9c0...
+                  <span className="text-white">Value:</span> vanguarda_verify_a8f9c0...
                 </div>
               </div>
 
@@ -158,9 +158,9 @@ export default function DocsPage() {
                   Host a static text file returning your verification token at the standard well-known location.
                 </p>
                 <div className="p-3 rounded-lg bg-black/40 font-mono text-xs text-muted-dim">
-                  <span className="text-white">Path:</span> /.well-known/sentinelapi-verify.txt<br />
+                  <span className="text-white">Path:</span> /.well-known/vanguarda-api-verify.txt<br />
                   <span className="text-white">Status:</span> HTTP 200 OK<br />
-                  <span className="text-white">Body:</span> sentinel_verify_a8f9c0...
+                  <span className="text-white">Body:</span> vanguarda_verify_a8f9c0...
                 </div>
               </div>
             </div>
@@ -176,7 +176,7 @@ export default function DocsPage() {
               3. Specification Formatting
             </h2>
             <p className="text-sm text-muted-body mb-6 leading-relaxed">
-              SentinelAPI ingests valid OpenAPI 3.0.x and 3.1.x definitions in JSON or YAML. For optimal testing, ensure:
+              Vanguarda-api ingests valid OpenAPI 3.0.x and 3.1.x definitions in JSON or YAML. For optimal testing, ensure:
             </p>
 
             <ul className="space-y-3 text-sm text-muted-body mb-6">
@@ -217,7 +217,7 @@ security:
               4. Understanding Findings
             </h2>
             <p className="text-sm text-muted-body leading-relaxed">
-              All reports output normalized, machine-readable findings strictly mapped to the Sentinel finding schema. Explore the interactive breakdown below:
+              All reports output normalized, machine-readable findings strictly mapped to the Vanguarda-api finding schema. Explore the interactive breakdown below:
             </p>
 
             <FindingAnatomyCard />

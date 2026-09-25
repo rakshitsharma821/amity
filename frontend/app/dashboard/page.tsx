@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, ArrowRight, Boxes, CircleDot, Eye, Gauge, LoaderCircle, Play, Plus, ShieldAlert, ShieldCheck, Server } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, Boxes, CircleDot, Eye, Gauge, LoaderCircle, Network, Play, Plus, ShieldAlert, ShieldCheck, Server } from 'lucide-react';
 import AmbientBackground from '@/components/cyber/ambient-background';
+import { AuthorizationGraph } from '@/components/scans/authorization-graph';
 import { api } from '@/lib/api/client';
 import { listScans, startScan } from '@/lib/api/scans';
 import { DEMO_IDENTITIES, listTargets, registerDemoTarget } from '@/lib/api/targets';
@@ -49,7 +50,7 @@ export default function DashboardPage() {
       const demo = targets.find((target) => target.demoSandbox) ?? await registerDemoTarget();
       if (!targets.some((target) => target.id === demo.id)) setTargets((current) => [demo, ...current]);
       await api('/demo/reset', { method: 'POST', body: JSON.stringify({ targetId: demo.id }) });
-      const identities = DEMO_IDENTITIES.map((identity, index) => ({ ...identity, credentials: { username: identity.username, password: index === 0 ? 'alice123' : 'bob123' } }));
+      const identities = DEMO_IDENTITIES.map((identity, index) => ({ ...identity, credentials: { username: identity.username, password: `AuthSecret#${index + 1}` } }));
       const scan = await startScan(demo.id, identities, { bola: true, bfla: true, dataExposure: true, massAssignment: true, rateLimiting: true, rateLimitRequests: 5 });
       window.location.assign(`/scans/${scan.scanId}`);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not start the local demo.'); setBusy(false); }
@@ -62,6 +63,33 @@ export default function DashboardPage() {
     <div className="mb-8 rounded-xl border border-lime-300/25 bg-lime-300/5 p-4 text-sm text-lime-100"><strong>Sandbox demo:</strong> scans run against the bundled, intentionally vulnerable loopback API. Demo credentials are sent only with the scan request; the backend resets its fixture after destructive probes.</div>
 
     <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(({ label, value, icon: Icon, color }) => <div key={label} className={`${panel} p-5`}><div className="mb-5 flex items-center justify-between"><span className="text-xs uppercase tracking-wider text-zinc-500">{label}</span><Icon size={18} className={color}/></div><div className="text-2xl font-semibold text-white">{loading ? '—' : value}</div><p className="mt-1 text-xs text-zinc-500">{latest ? `From scan ${latest.id.slice(0, 8)}` : 'Based on latest completed backend scan'}</p></div>)}</section>
+
+    {/* Live Threat & Authorization Graph */}
+    <section className="mb-8">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Network className="w-4 h-4 text-lime-400" />
+          <h2 className="font-bold text-white text-lg">Authorization & Threat Attack Graph</h2>
+          <span className="text-xs font-mono px-2 py-0.5 rounded bg-lime-400/10 text-lime-300 border border-lime-400/25">
+            Innovation: Graph Analysis
+          </span>
+        </div>
+        <Link 
+          href="/graph" 
+          className="inline-flex items-center gap-1.5 text-xs font-mono text-lime-300 hover:text-lime-200 transition-colors"
+        >
+          Open Dedicated Graph Explorer <ArrowRight size={14} />
+        </Link>
+      </div>
+
+      <AuthorizationGraph 
+        nodes={latest?.graph?.nodes ?? []} 
+        edges={latest?.graph?.edges ?? []} 
+        targetName={latest ? `Scan ${latest.id.slice(0, 8)} Authorization Topology` : 'Live Authorization Graph'}
+        targetBaseUrl="http://127.0.0.1:4000"
+        scanId={latest?.id}
+      />
+    </section>
 
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]"><section className={`${panel} p-5`}><div className="mb-4 flex items-center justify-between"><h2 className="font-semibold text-white">Registered targets</h2><span className="text-xs text-zinc-500">{targets.length} from backend</span></div>{loading ? <p className="text-sm text-zinc-500">Loading targets…</p> : targets.length ? <ul className="space-y-3">{targets.map((target) => <li key={target.id} className="rounded-xl border border-white/10 bg-black/20 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-medium text-white">{target.name}</p><p className="mt-1 break-all font-mono text-xs text-zinc-500">{target.baseUrl}</p></div><span className={`rounded-full px-2 py-1 text-[10px] uppercase ${target.sandboxMode ? 'bg-lime-300/10 text-lime-200' : 'bg-amber-300/10 text-amber-200'}`}>{target.sandboxMode ? 'Sandbox' : 'Authorized'}</span></div></li>)}</ul> : <p className="text-sm text-zinc-500">No target registered yet. Launch the demo or create a scan target.</p>}<Link href="/scans/new" className="mt-4 inline-flex items-center gap-2 text-sm text-lime-200 hover:text-white">Configure a target <ArrowRight size={15}/></Link></section>
 

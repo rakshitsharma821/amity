@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SentinelAPI — Zero-Trust API Vulnerability Dashboard</title>
+  <title>Vanguarda-api — Zero-Trust API Vulnerability Dashboard</title>
   <style>
     :root {
       --bg-primary: #0a0a0b;
@@ -653,6 +653,305 @@
       transform: translateY(0);
     }
 
+    /* Continuous Monitoring Section */
+    .monitoring-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .monitoring-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .monitoring-title-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .monitoring-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(163, 230, 53, 0.12);
+      border: 1px solid rgba(163, 230, 53, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .monitoring-title-group h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .monitoring-title-group p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .monitoring-meta-badges {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      box-shadow: 0 0 10px var(--accent-primary);
+      display: inline-block;
+      animation: pulse-glow 2s infinite ease-in-out;
+    }
+
+    .pulse-dot.down {
+      background: var(--high-color);
+      box-shadow: 0 0 10px var(--high-color);
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.35); opacity: 0.4; }
+    }
+
+    .monitor-chip {
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.4);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .monitor-chip strong {
+      color: #fff;
+    }
+
+    /* Trend Chart */
+    .chart-wrapper {
+      background: #0d0d10;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .chart-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-box {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .legend-box.total { background: #38bdf8; }
+    .legend-box.high { background: var(--high-color); }
+    .legend-box.med { background: var(--med-color); }
+    .legend-box.low { background: var(--accent-primary); }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 220px;
+    }
+
+    #history-chart {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .chart-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: #18181b;
+      border: 1px solid var(--border-light);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: monospace;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.8);
+      z-index: 10;
+      line-height: 1.5;
+    }
+
+    /* Terminal Alert Feed */
+    .terminal-container {
+      background: #09090b;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .terminal-bar {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border-color);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .terminal-dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .terminal-dots span:nth-child(1) { background: #ff5f56; }
+    .terminal-dots span:nth-child(2) { background: #ffbd2e; }
+    .terminal-dots span:nth-child(3) { background: #27c93f; }
+
+    .terminal-title {
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+    }
+
+    .terminal-badge-count {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    .terminal-feed {
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 10px 14px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .terminal-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .terminal-row:last-child {
+      border-bottom: none;
+    }
+
+    .terminal-time {
+      color: var(--text-sub);
+      flex-shrink: 0;
+      font-size: 11px;
+    }
+
+    .terminal-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+      letter-spacing: 0.5px;
+    }
+
+    .terminal-tag.down {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fda4af;
+      border: 1px solid rgba(244, 63, 94, 0.4);
+    }
+
+    .terminal-tag.new-high {
+      background: var(--high-bg);
+      color: var(--high-color);
+      border: 1px solid var(--high-border);
+    }
+
+    .terminal-tag.new {
+      background: var(--med-bg);
+      color: var(--med-color);
+      border: 1px solid var(--med-border);
+    }
+
+    .terminal-tag.resolved {
+      background: rgba(163, 230, 53, 0.15);
+      color: var(--accent-primary);
+      border: 1px solid rgba(163, 230, 53, 0.35);
+    }
+
+    .terminal-tag.endpoint {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .terminal-msg {
+      color: #e4e4e7;
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .terminal-empty {
+      color: var(--text-sub);
+      text-align: center;
+      padding: 24px;
+      font-style: italic;
+    }
+
     @media (max-width: 768px) {
       body { padding: 16px; }
       header { flex-direction: column; align-items: flex-start; }
@@ -674,8 +973,9 @@
   <!-- Toast -->
   <div id="toast">Report updated</div>
 
-  <!-- Hidden File Input -->
+  <!-- Hidden File Inputs -->
   <input type="file" id="file-input" accept=".json" style="display: none;" />
+  <input type="file" id="history-file-input" accept=".json" style="display: none;" />
 
   <div class="container">
     <!-- Header -->
@@ -683,13 +983,16 @@
       <div class="brand">
         <div class="brand-icon">🛡️</div>
         <div>
-          <h1>SentinelAPI</h1>
+          <h1>Vanguarda-api</h1>
           <p>Zero-Trust API Vulnerability Scanner • Executive & Technical Report</p>
         </div>
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" id="load-file-btn">
           <span>📁</span> Load findings.json
+        </button>
+        <button class="btn" id="load-history-btn">
+          <span>📈</span> Load history.json
         </button>
         <button class="btn" id="export-json-btn">
           <span>💾</span> Export JSON
@@ -743,6 +1046,59 @@
         <div class="stat-title">Low Severity</div>
         <div class="stat-num" id="stat-low">
           0 <span class="stat-badge">Informational</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Continuous Monitoring Section -->
+    <div class="monitoring-card" id="monitoring-section">
+      <div class="monitoring-header">
+        <div class="monitoring-title-group">
+          <div class="monitoring-icon">📈</div>
+          <div>
+            <h3>Continuous Monitoring & Historical Trends</h3>
+            <p>Automated regression detection and vulnerability trends across scan iterations</p>
+          </div>
+        </div>
+        <div class="monitoring-meta-badges">
+          <div class="meta-status-pill pass" id="monitor-status-pill">
+            <span class="pulse-dot" id="monitor-pulse-dot"></span>
+            <span id="monitor-status-text">Monitoring active</span>
+          </div>
+          <span class="monitor-chip">Last Scan: <strong id="monitor-last-scan">--</strong></span>
+          <span class="monitor-chip">Started: <strong id="monitor-started">--</strong></span>
+          <span class="monitor-chip">Total Scans: <strong id="monitor-total-scans">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Severity Line Chart -->
+      <div class="chart-wrapper">
+        <div class="chart-header">
+          <span class="chart-title">Findings Severity Over Time</span>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-box total"></span> Total</span>
+            <span class="legend-item"><span class="legend-box high"></span> High</span>
+            <span class="legend-item"><span class="legend-box med"></span> Medium</span>
+            <span class="legend-item"><span class="legend-box low"></span> Low</span>
+          </div>
+        </div>
+        <div class="canvas-container">
+          <canvas id="history-chart"></canvas>
+          <div id="chart-tooltip" class="chart-tooltip"></div>
+        </div>
+      </div>
+
+      <!-- Live Terminal Alert Feed -->
+      <div class="terminal-container">
+        <div class="terminal-bar">
+          <div class="terminal-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="terminal-title">TERMINAL // AUDIT EVENT STREAM (NEWEST FIRST)</div>
+          <div class="terminal-badge-count" id="terminal-event-count">0 events</div>
+        </div>
+        <div class="terminal-feed" id="terminal-feed">
+          <!-- Populated dynamically via JS -->
         </div>
       </div>
     </div>
@@ -903,16 +1259,449 @@
   }
   </script>
 
+  <!-- Embedded Default History (Allows offline file:// operation) -->
+  <script id="embedded-history" type="application/json">
+[
+  {
+    "timestamp": "2026-09-25T00:21:32.718806+00:00",
+    "scan_number": 1,
+    "target_reachable": false,
+    "downtime_error": "Neither 'spec_file' nor 'spec_url' in config could be loaded.",
+    "findings": [],
+    "new_findings": [],
+    "resolved_findings": [],
+    "new_endpoints": [],
+    "total_findings": 0,
+    "severity_counts": {
+      "High": 0,
+      "Medium": 0,
+      "Low": 0
+    },
+    "duration_seconds": 0.0
+  },
+  {
+    "timestamp": "2026-09-25T00:21:41.370263+00:00",
+    "scan_number": 2,
+    "target_reachable": true,
+    "target_base_url": "http://localhost:4000",
+    "target_spec_title": "SentinelAPI Vulnerable Test Target",
+    "findings": [
+      {
+        "id": "SENTINEL-BOLA-01",
+        "title": "Broken Object Level Authorization (BOLA) in /orders/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 3) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/orders/3",
+          "resource_id": 3,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 3,
+            "user_id": 2,
+            "items": [
+              "4K UltraWide Monitor"
+            ],
+            "amount": 649,
+            "status": "shipped",
+            "card_number": "4242...[redacted]...4242",
+            "created_at": "2026-09-22T09:12:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/3\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/orders/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-BOLA-02",
+        "title": "Broken Object Level Authorization (BOLA) in /users/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 2) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/users/2",
+          "resource_id": 2,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 2,
+            "username": "bob",
+            "password": "bob...[redacted]",
+            "email": "bob@example.com",
+            "role": "customer",
+            "bio": "DevOps engineer and automation geek"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/2\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/users/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-03",
+        "title": "Excessive Data Exposure: Unmasked Payment Card Data in /orders/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Financial Data (PCI-DSS)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' returns unmasked primary account numbers (PAN) that successfully pass the Luhn checksum algorithm. Exposing full payment card numbers violates PCI-DSS Requirement 3.3 and significantly increases financial fraud risk.",
+        "evidence": {
+          "detected_card_count": 1,
+          "sample_masked_card": "4532...[redacted]...1235",
+          "sample_payload": {
+            "id": 1,
+            "user_id": 1,
+            "items": [
+              "Mechanical Keyboard",
+              "USB-C Hub"
+            ],
+            "amount": 189.99,
+            "status": "completed",
+            "card_number": "4532...[redacted]...1235",
+            "created_at": "2026-09-20T10:15:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Mask all payment card numbers returned by '/orders/{id}', displaying at most the first 6 and last 4 digits (e.g., '4532-****-****-1235'). Store and transmit tokens rather than raw PANs."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-04",
+        "title": "Excessive Data Exposure: Plaintext Password Leak in /users/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Credential Leakage",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' exposes user credentials in plaintext within the response payload. Client applications rarely require raw passwords or hashes. Exposing credentials allows any compromised client, MITM observer, or caching layer to harvest sensitive access keys.",
+        "evidence": {
+          "exposed_fields": [
+            "password"
+          ],
+          "sample_payload": {
+            "id": 1,
+            "username": "alice",
+            "password": "ali...[redacted]",
+            "email": "alice@example.com",
+            "role": "customer",
+            "bio": "Senior developer and coffee enthusiast"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Remove password fields from API Data Transfer Objects (DTOs) and serialization schemas for '/users/{id}'. Ensure authentication hashes and plaintext secrets are stripped before returning user data."
+      },
+      {
+        "id": "SENTINEL-RATE-LIMIT-05",
+        "title": "Missing Rate Limiting on Authentication Endpoint (/login)",
+        "vulnerability_class": "Missing Rate Limiting / Authentication Brute-Force",
+        "severity": "Medium",
+        "endpoint": "POST /login",
+        "explanation": "The authentication endpoint '/login' accepted a bounded burst of 30 rapid requests without triggering HTTP 429 (Too Many Requests) or signaling rate limit status headers ('Retry-After', 'X-RateLimit-*'). Unbounded authentication endpoints enable credential stuffing and brute-force dictionary attacks against user accounts.",
+        "evidence": {
+          "tested_endpoint": "/login",
+          "burst_requests_sent": 30,
+          "status_distribution": {
+            "HTTP_401": 30
+          },
+          "rate_limiting_headers_detected": false,
+          "http_429_observed": false
+        },
+        "reproduction": "for i in $(seq 1 30); do\n  curl -s -o /dev/null -w \"HTTP %{http_code}\\n\" -X POST \"http://localhost:4000/login\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"username\": \"alice\", \"password\": \"wrong-password-test\"}'\ndone",
+        "recommendation": "Implement rate limiting on '/login' using an IP and account-based token bucket or leaky bucket algorithm. Enforce standard HTTP 429 status responses accompanied by 'Retry-After' and 'X-RateLimit-Reset' headers when request thresholds are exceeded."
+      }
+    ],
+    "new_findings": [
+      {
+        "id": "SENTINEL-BOLA-01",
+        "title": "Broken Object Level Authorization (BOLA) in /orders/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 3) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/orders/3",
+          "resource_id": 3,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 3,
+            "user_id": 2,
+            "items": [
+              "4K UltraWide Monitor"
+            ],
+            "amount": 649,
+            "status": "shipped",
+            "card_number": "4242...[redacted]...4242",
+            "created_at": "2026-09-22T09:12:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/3\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/orders/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-BOLA-02",
+        "title": "Broken Object Level Authorization (BOLA) in /users/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 2) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/users/2",
+          "resource_id": 2,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 2,
+            "username": "bob",
+            "password": "bob...[redacted]",
+            "email": "bob@example.com",
+            "role": "customer",
+            "bio": "DevOps engineer and automation geek"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/2\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/users/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-03",
+        "title": "Excessive Data Exposure: Unmasked Payment Card Data in /orders/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Financial Data (PCI-DSS)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' returns unmasked primary account numbers (PAN) that successfully pass the Luhn checksum algorithm. Exposing full payment card numbers violates PCI-DSS Requirement 3.3 and significantly increases financial fraud risk.",
+        "evidence": {
+          "detected_card_count": 1,
+          "sample_masked_card": "4532...[redacted]...1235",
+          "sample_payload": {
+            "id": 1,
+            "user_id": 1,
+            "items": [
+              "Mechanical Keyboard",
+              "USB-C Hub"
+            ],
+            "amount": 189.99,
+            "status": "completed",
+            "card_number": "4532...[redacted]...1235",
+            "created_at": "2026-09-20T10:15:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Mask all payment card numbers returned by '/orders/{id}', displaying at most the first 6 and last 4 digits (e.g., '4532-****-****-1235'). Store and transmit tokens rather than raw PANs."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-04",
+        "title": "Excessive Data Exposure: Plaintext Password Leak in /users/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Credential Leakage",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' exposes user credentials in plaintext within the response payload. Client applications rarely require raw passwords or hashes. Exposing credentials allows any compromised client, MITM observer, or caching layer to harvest sensitive access keys.",
+        "evidence": {
+          "exposed_fields": [
+            "password"
+          ],
+          "sample_payload": {
+            "id": 1,
+            "username": "alice",
+            "password": "ali...[redacted]",
+            "email": "alice@example.com",
+            "role": "customer",
+            "bio": "Senior developer and coffee enthusiast"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Remove password fields from API Data Transfer Objects (DTOs) and serialization schemas for '/users/{id}'. Ensure authentication hashes and plaintext secrets are stripped before returning user data."
+      },
+      {
+        "id": "SENTINEL-RATE-LIMIT-05",
+        "title": "Missing Rate Limiting on Authentication Endpoint (/login)",
+        "vulnerability_class": "Missing Rate Limiting / Authentication Brute-Force",
+        "severity": "Medium",
+        "endpoint": "POST /login",
+        "explanation": "The authentication endpoint '/login' accepted a bounded burst of 30 rapid requests without triggering HTTP 429 (Too Many Requests) or signaling rate limit status headers ('Retry-After', 'X-RateLimit-*'). Unbounded authentication endpoints enable credential stuffing and brute-force dictionary attacks against user accounts.",
+        "evidence": {
+          "tested_endpoint": "/login",
+          "burst_requests_sent": 30,
+          "status_distribution": {
+            "HTTP_401": 30
+          },
+          "rate_limiting_headers_detected": false,
+          "http_429_observed": false
+        },
+        "reproduction": "for i in $(seq 1 30); do\n  curl -s -o /dev/null -w \"HTTP %{http_code}\\n\" -X POST \"http://localhost:4000/login\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"username\": \"alice\", \"password\": \"wrong-password-test\"}'\ndone",
+        "recommendation": "Implement rate limiting on '/login' using an IP and account-based token bucket or leaky bucket algorithm. Enforce standard HTTP 429 status responses accompanied by 'Retry-After' and 'X-RateLimit-Reset' headers when request thresholds are exceeded."
+      }
+    ],
+    "resolved_findings": [],
+    "new_endpoints": [],
+    "total_findings": 5,
+    "severity_counts": {
+      "High": 4,
+      "Medium": 1,
+      "Low": 0
+    },
+    "duration_seconds": 0.68
+  },
+  {
+    "timestamp": "2026-09-25T00:21:50.339243+00:00",
+    "scan_number": 3,
+    "target_reachable": true,
+    "target_base_url": "http://localhost:4000",
+    "target_spec_title": "SentinelAPI Vulnerable Test Target",
+    "findings": [
+      {
+        "id": "SENTINEL-BOLA-01",
+        "title": "Broken Object Level Authorization (BOLA) in /orders/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 3) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/orders/3",
+          "resource_id": 3,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 3,
+            "user_id": 2,
+            "items": [
+              "4K UltraWide Monitor"
+            ],
+            "amount": 649,
+            "status": "shipped",
+            "card_number": "4242...[redacted]...4242",
+            "created_at": "2026-09-22T09:12:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/3\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/orders/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-BOLA-02",
+        "title": "Broken Object Level Authorization (BOLA) in /users/{id}",
+        "vulnerability_class": "Broken Object Level Authorization (BOLA / IDOR)",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' failed to verify resource ownership. User A ('alice') successfully accessed User B's ('bob') private record (ID: 2) without authorization. In a zero-trust model, users must only be allowed to query records tied directly to their authenticated session.",
+        "evidence": {
+          "tested_endpoint": "/users/2",
+          "resource_id": 2,
+          "user_a_status": 200,
+          "user_b_status": 200,
+          "data_sample": {
+            "id": 2,
+            "username": "bob",
+            "password": "bob...[redacted]",
+            "email": "bob@example.com",
+            "role": "customer",
+            "bio": "DevOps engineer and automation geek"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/2\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Enforce strict ownership validation at the data-access layer for '/users/{id}'. Verify that the requesting subject's ID (extracted securely from the authenticated token) matches the resource's owner_id before executing the database query or returning results."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-03",
+        "title": "Excessive Data Exposure: Unmasked Payment Card Data in /orders/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Financial Data (PCI-DSS)",
+        "severity": "High",
+        "endpoint": "GET /orders/{id}",
+        "explanation": "The endpoint '/orders/{id}' returns unmasked primary account numbers (PAN) that successfully pass the Luhn checksum algorithm. Exposing full payment card numbers violates PCI-DSS Requirement 3.3 and significantly increases financial fraud risk.",
+        "evidence": {
+          "detected_card_count": 1,
+          "sample_masked_card": "4532...[redacted]...1235",
+          "sample_payload": {
+            "id": 1,
+            "user_id": 1,
+            "items": [
+              "Mechanical Keyboard",
+              "USB-C Hub"
+            ],
+            "amount": 189.99,
+            "status": "completed",
+            "card_number": "4532...[redacted]...1235",
+            "created_at": "2026-09-20T10:15:00Z"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/orders/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Mask all payment card numbers returned by '/orders/{id}', displaying at most the first 6 and last 4 digits (e.g., '4532-****-****-1235'). Store and transmit tokens rather than raw PANs."
+      },
+      {
+        "id": "SENTINEL-DATA-EXP-04",
+        "title": "Excessive Data Exposure: Plaintext Password Leak in /users/{id}",
+        "vulnerability_class": "Excessive Data Exposure / Credential Leakage",
+        "severity": "High",
+        "endpoint": "GET /users/{id}",
+        "explanation": "The endpoint '/users/{id}' exposes user credentials in plaintext within the response payload. Client applications rarely require raw passwords or hashes. Exposing credentials allows any compromised client, MITM observer, or caching layer to harvest sensitive access keys.",
+        "evidence": {
+          "exposed_fields": [
+            "password"
+          ],
+          "sample_payload": {
+            "id": 1,
+            "username": "alice",
+            "password": "ali...[redacted]",
+            "email": "alice@example.com",
+            "role": "customer",
+            "bio": "Senior developer and coffee enthusiast"
+          }
+        },
+        "reproduction": "curl -X GET \"http://localhost:4000/users/1\" \\\n  -H \"Authorization: Bearer eyJ...[redacted]\" \\\n  -H \"Accept: application/json\"",
+        "recommendation": "Remove password fields from API Data Transfer Objects (DTOs) and serialization schemas for '/users/{id}'. Ensure authentication hashes and plaintext secrets are stripped before returning user data."
+      },
+      {
+        "id": "SENTINEL-RATE-LIMIT-05",
+        "title": "Missing Rate Limiting on Authentication Endpoint (/login)",
+        "vulnerability_class": "Missing Rate Limiting / Authentication Brute-Force",
+        "severity": "Medium",
+        "endpoint": "POST /login",
+        "explanation": "The authentication endpoint '/login' accepted a bounded burst of 30 rapid requests without triggering HTTP 429 (Too Many Requests) or signaling rate limit status headers ('Retry-After', 'X-RateLimit-*'). Unbounded authentication endpoints enable credential stuffing and brute-force dictionary attacks against user accounts.",
+        "evidence": {
+          "tested_endpoint": "/login",
+          "burst_requests_sent": 30,
+          "status_distribution": {
+            "HTTP_401": 30
+          },
+          "rate_limiting_headers_detected": false,
+          "http_429_observed": false
+        },
+        "reproduction": "for i in $(seq 1 30); do\n  curl -s -o /dev/null -w \"HTTP %{http_code}\\n\" -X POST \"http://localhost:4000/login\" \\\n    -H \"Content-Type: application/json\" \\\n    -d '{\"username\": \"alice\", \"password\": \"wrong-password-test\"}'\ndone",
+        "recommendation": "Implement rate limiting on '/login' using an IP and account-based token bucket or leaky bucket algorithm. Enforce standard HTTP 429 status responses accompanied by 'Retry-After' and 'X-RateLimit-Reset' headers when request thresholds are exceeded."
+      }
+    ],
+    "new_findings": [],
+    "resolved_findings": [],
+    "new_endpoints": [
+      "/admin/users/{id}/role",
+      "/login",
+      "/me/orders",
+      "/openapi.json",
+      "/orders/{id}",
+      "/orders/{id}/invoice",
+      "/orders/{id}/payment",
+      "/orders/{id}/shipment",
+      "/users/{id}"
+    ],
+    "total_findings": 5,
+    "severity_counts": {
+      "High": 4,
+      "Medium": 1,
+      "Low": 0
+    },
+    "duration_seconds": 0.67
+  }
+]
+  </script>
+
   <script>
     // State management
     let reportData = null;
+    let historyData = [];
     let currentFilter = 'all';
     let searchQuery = '';
     let allExpanded = false;
+    let hoveredPointIndex = -1;
 
     // DOM Elements
     const fileInput = document.getElementById('file-input');
+    const historyFileInput = document.getElementById('history-file-input');
     const loadFileBtn = document.getElementById('load-file-btn');
+    const loadHistoryBtn = document.getElementById('load-history-btn');
     const exportJsonBtn = document.getElementById('export-json-btn');
     const toast = document.getElementById('toast');
     const dropZone = document.getElementById('drop-zone-overlay');
@@ -920,6 +1709,18 @@
     const searchInput = document.getElementById('search-input');
     const filterTabs = document.getElementById('filter-tabs');
     const toggleAllBtn = document.getElementById('toggle-all-btn');
+
+    // Monitoring & History Elements
+    const monitorStatusPill = document.getElementById('monitor-status-pill');
+    const monitorStatusText = document.getElementById('monitor-status-text');
+    const monitorPulseDot = document.getElementById('monitor-pulse-dot');
+    const monitorLastScan = document.getElementById('monitor-last-scan');
+    const monitorStarted = document.getElementById('monitor-started');
+    const monitorTotalScans = document.getElementById('monitor-total-scans');
+    const historyCanvas = document.getElementById('history-chart');
+    const chartTooltip = document.getElementById('chart-tooltip');
+    const terminalFeed = document.getElementById('terminal-feed');
+    const terminalEventCount = document.getElementById('terminal-event-count');
 
     // Stats Elements
     const statTotal = document.getElementById('stat-total');
@@ -940,20 +1741,39 @@
     }
 
     function init() {
+      // 1. Load embedded findings
       try {
-        const embeddedJson = document.getElementById('embedded-data').textContent;
-        reportData = JSON.parse(embeddedJson);
-        renderDashboard();
+        const embeddedFindingsEl = document.getElementById('embedded-data');
+        if (embeddedFindingsEl && embeddedFindingsEl.textContent.trim()) {
+          reportData = JSON.parse(embeddedFindingsEl.textContent);
+          renderDashboard();
+        }
       } catch (err) {
-        console.error("Failed to parse embedded report data:", err);
+        console.error('Failed to parse embedded report data:', err);
       }
+
+      // 2. Load embedded history
+      try {
+        const embeddedHistoryEl = document.getElementById('embedded-history');
+        if (embeddedHistoryEl && embeddedHistoryEl.textContent.trim()) {
+          historyData = JSON.parse(embeddedHistoryEl.textContent);
+          renderHistory();
+        }
+      } catch (err) {
+        console.error('Failed to parse embedded history data:', err);
+      }
+
       setupEventListeners();
     }
 
     function setupEventListeners() {
-      // File loader
+      // Findings file loader
       loadFileBtn.addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', handleFileSelect);
+
+      // History file loader
+      loadHistoryBtn.addEventListener('click', () => historyFileInput.click());
+      historyFileInput.addEventListener('change', handleHistoryFileSelect);
 
       // Export JSON
       exportJsonBtn.addEventListener('click', () => {
@@ -962,7 +1782,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `sentinel-findings-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `vanguarda-api-findings-${new Date().toISOString().slice(0, 10)}.json`;
         a.click();
         URL.revokeObjectURL(url);
       });
@@ -1014,6 +1834,19 @@
           }
         });
       });
+
+      // Canvas Tooltip interactions
+      if (historyCanvas) {
+        historyCanvas.addEventListener('mousemove', handleChartMouseMove);
+        historyCanvas.addEventListener('mouseleave', handleChartMouseLeave);
+      }
+
+      // Responsive chart redraw
+      window.addEventListener('resize', () => {
+        if (historyData && historyData.length > 0) {
+          drawHistoryChart();
+        }
+      });
     }
 
     function handleFileSelect(e) {
@@ -1023,23 +1856,88 @@
       }
     }
 
+    function handleHistoryFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        readHistoryFile(file);
+      }
+    }
+
     function readJsonFile(file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const parsed = JSON.parse(e.target.result);
-          if (parsed && (parsed.findings || Array.isArray(parsed))) {
+          // Auto-detect history array vs findings report
+          if (Array.isArray(parsed) && parsed.length > 0 && ('scan_number' in parsed[0] || 'target_reachable' in parsed[0])) {
+            historyData = parsed;
+            renderHistory();
+            syncFindingsFromHistory();
+            showToast(`Loaded ${file.name} (${historyData.length} scans)`);
+          } else if (parsed && (parsed.findings || Array.isArray(parsed))) {
             reportData = Array.isArray(parsed) ? { findings: parsed, scan_metadata: {} } : parsed;
             renderDashboard();
             showToast(`Loaded ${file.name} successfully`);
           } else {
-            alert('Invalid JSON structure: Expected a SentinelAPI report format.');
+            alert('Invalid JSON structure: Expected Vanguarda-api report or history format.');
           }
         } catch (err) {
           alert('Error parsing JSON file: ' + err.message);
         }
       };
       reader.readAsText(file);
+    }
+
+    function readHistoryFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (Array.isArray(parsed)) {
+            historyData = parsed;
+          } else if (parsed && parsed.scans && Array.isArray(parsed.scans)) {
+            historyData = parsed.scans;
+          } else if (parsed && parsed.findings) {
+            reportData = parsed;
+            renderDashboard();
+            showToast(`Loaded ${file.name} as findings report`);
+            return;
+          } else {
+            alert('Invalid history JSON: Expected an array of scan entries.');
+            return;
+          }
+          renderHistory();
+          syncFindingsFromHistory();
+          showToast(`Loaded ${file.name} (${historyData.length} scans)`);
+        } catch (err) {
+          alert('Error parsing history JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function syncFindingsFromHistory() {
+      if (!historyData || historyData.length === 0) return;
+      // Search for the latest reachable scan that has findings
+      for (let i = historyData.length - 1; i >= 0; i--) {
+        const scan = historyData[i];
+        if (scan.findings && scan.findings.length > 0) {
+          reportData = {
+            scan_metadata: {
+              scanner: 'Vanguarda-api v1.0.0',
+              target_base_url: scan.target_base_url,
+              target_spec_title: scan.target_spec_title,
+              timestamp: scan.timestamp,
+              duration_seconds: scan.duration_seconds,
+              total_findings: scan.total_findings,
+              severity_counts: scan.severity_counts
+            },
+            findings: scan.findings
+          };
+          renderDashboard();
+          break;
+        }
+      }
     }
 
     function renderDashboard() {
@@ -1080,6 +1978,397 @@
       document.querySelector('[data-filter="low"]').textContent = `Low (${lowCount})`;
 
       renderFindings();
+    }
+
+    // =====================================================================
+    // Continuous Monitoring & History Rendering
+    // =====================================================================
+
+    function renderHistory() {
+      if (!historyData || historyData.length === 0) {
+        monitorStatusPill.className = 'meta-status-pill';
+        monitorPulseDot.className = 'pulse-dot down';
+        monitorStatusText.textContent = 'No Scans Recorded';
+        monitorLastScan.textContent = '--';
+        monitorStarted.textContent = '--';
+        monitorTotalScans.textContent = '0';
+        terminalFeed.innerHTML = '<div class="terminal-empty">No scan history available. Run scanner with --monitor or load history.json</div>';
+        terminalEventCount.textContent = '0 events';
+        return;
+      }
+
+      const totalScans = historyData.length;
+      const firstScan = historyData[0];
+      const latestScan = historyData[totalScans - 1];
+
+      // 1. Update Status Badge
+      if (latestScan.target_reachable === false) {
+        monitorStatusPill.className = 'meta-status-pill';
+        monitorPulseDot.className = 'pulse-dot down';
+        monitorStatusText.textContent = 'Target Unreachable';
+      } else {
+        monitorStatusPill.className = 'meta-status-pill pass';
+        monitorPulseDot.className = 'pulse-dot';
+        monitorStatusText.textContent = 'Monitoring active';
+      }
+
+      // 2. Update Timestamps
+      const lastDate = new Date(latestScan.timestamp);
+      const firstDate = new Date(firstScan.timestamp);
+      monitorLastScan.textContent = `${formatTimeAgo(lastDate)} (${formatTimeStr(lastDate)})`;
+      monitorStarted.textContent = `${formatTimeStr(firstDate)} (${formatDuration(new Date() - firstDate)} elapsed)`;
+      monitorTotalScans.textContent = totalScans;
+
+      // 3. Extract and Render Live Terminal Alert Feed (newest first)
+      const alerts = [];
+      historyData.forEach((scan, scanIdx) => {
+        const sTime = scan.timestamp;
+        const sNum = scan.scan_number || (scanIdx + 1);
+
+        if (scan.target_reachable === false) {
+          alerts.push({
+            time: sTime,
+            scanNumber: sNum,
+            tag: 'DOWN',
+            tagClass: 'down',
+            msg: `Target unreachable: ${scan.downtime_error || 'Network error / connection refused'}`
+          });
+        }
+
+        // New endpoints
+        if (Array.isArray(scan.new_endpoints)) {
+          scan.new_endpoints.forEach(ep => {
+            alerts.push({
+              time: sTime,
+              scanNumber: sNum,
+              tag: 'NEW ROUTE',
+              tagClass: 'endpoint',
+              msg: `New API route discovered in OpenAPI spec: ${ep}`
+            });
+          });
+        }
+
+        // Resolved findings
+        if (Array.isArray(scan.resolved_findings)) {
+          scan.resolved_findings.forEach(f => {
+            alerts.push({
+              time: sTime,
+              scanNumber: sNum,
+              tag: 'RESOLVED',
+              tagClass: 'resolved',
+              msg: `Vulnerability resolved: ${f.title || f.id} (${f.endpoint || ''})`
+            });
+          });
+        }
+
+        // New findings
+        if (Array.isArray(scan.new_findings)) {
+          scan.new_findings.forEach(f => {
+            const isHigh = String(f.severity).toLowerCase() === 'high';
+            alerts.push({
+              time: sTime,
+              scanNumber: sNum,
+              tag: isHigh ? 'NEW HIGH' : 'NEW',
+              tagClass: isHigh ? 'new-high' : 'new',
+              msg: `${f.title || f.id} [${f.severity || 'Medium'}] at ${f.endpoint || ''}`
+            });
+          });
+        }
+      });
+
+      // Sort newest first
+      alerts.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+      terminalEventCount.textContent = `${alerts.length} event${alerts.length === 1 ? '' : 's'}`;
+
+      if (alerts.length === 0) {
+        terminalFeed.innerHTML = '<div class="terminal-empty">No alerts recorded yet. Continuous monitor running cleanly.</div>';
+      } else {
+        terminalFeed.innerHTML = alerts.map(a => `
+          <div class="terminal-row">
+            <span class="terminal-time">[${formatTimestamp(a.time)}]</span>
+            <span class="terminal-tag ${a.tagClass}">${a.tag}</span>
+            <span class="terminal-msg">${escapeHtml(a.msg)}</span>
+          </div>
+        `).join('');
+      }
+
+      // 4. Render Line Chart
+      drawHistoryChart();
+    }
+
+    // Chart coordinates cache for hover tooltip
+    let chartPointsCache = [];
+
+    function drawHistoryChart() {
+      if (!historyCanvas || !historyData || historyData.length === 0) return;
+
+      const container = historyCanvas.parentElement;
+      const width = container.clientWidth || 800;
+      const height = 220;
+
+      const dpr = window.devicePixelRatio || 1;
+      historyCanvas.width = width * dpr;
+      historyCanvas.height = height * dpr;
+
+      const ctx = historyCanvas.getContext('2d');
+      ctx.resetTransform();
+      ctx.scale(dpr, dpr);
+
+      // Margins
+      const pad = { top: 22, right: 30, bottom: 38, left: 45 };
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Parse data points
+      const points = historyData.map((s, idx) => ({
+        scanNumber: s.scan_number || (idx + 1),
+        timestamp: s.timestamp,
+        timeStr: formatTimeStr(new Date(s.timestamp)),
+        reachable: s.target_reachable !== false,
+        total: s.total_findings || 0,
+        high: (s.severity_counts && s.severity_counts.High) || 0,
+        med: (s.severity_counts && s.severity_counts.Medium) || 0,
+        low: (s.severity_counts && s.severity_counts.Low) || 0,
+        newCount: (s.new_findings && s.new_findings.length) || 0,
+        resolvedCount: (s.resolved_findings && s.resolved_findings.length) || 0
+      }));
+
+      // Find max Y
+      let maxVal = 5;
+      points.forEach(p => {
+        maxVal = Math.max(maxVal, p.total, p.high, p.med, p.low);
+      });
+      const yStep = Math.max(1, Math.ceil(maxVal / 5));
+      const yLimit = yStep * 5;
+
+      // Draw horizontal grid lines & Y labels
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+      ctx.fillStyle = '#71717a';
+      ctx.font = '11px "SFMono-Regular", Consolas, monospace';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+
+      for (let i = 0; i <= 5; i++) {
+        const val = i * yStep;
+        const y = pad.top + plotH - (val / yLimit) * plotH;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(width - pad.right, y);
+        ctx.stroke();
+        ctx.fillText(String(val), pad.left - 10, y);
+      }
+
+      // Compute X coordinates
+      chartPointsCache = points.map((p, idx) => {
+        let x;
+        if (points.length === 1) {
+          x = pad.left + plotW / 2;
+        } else {
+          x = pad.left + (idx / (points.length - 1)) * plotW;
+        }
+        return { ...p, x };
+      });
+
+      // Draw vertical X ticks and labels
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      chartPointsCache.forEach((p, idx) => {
+        const showLabel = points.length <= 8 || idx === 0 || idx === points.length - 1 || idx % Math.ceil(points.length / 6) === 0;
+        if (showLabel) {
+          ctx.fillStyle = '#a1a1aa';
+          ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillText(`Scan #${p.scanNumber}`, p.x, height - pad.bottom + 6);
+          ctx.fillStyle = '#71717a';
+          ctx.font = '10px "SFMono-Regular", Consolas, monospace';
+          ctx.fillText(p.timeStr, p.x, height - pad.bottom + 20);
+        }
+      });
+
+      // Series definitions
+      const seriesList = [
+        { key: 'total', color: '#38bdf8' },
+        { key: 'high', color: '#ff3b47' },
+        { key: 'med', color: '#ffb020' },
+        { key: 'low', color: '#a3e635' }
+      ];
+
+      // Draw Downtime vertical indicators
+      chartPointsCache.forEach(p => {
+        if (!p.reachable) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash([4, 4]);
+          ctx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
+          ctx.lineWidth = 1.5;
+          ctx.moveTo(p.x, pad.top);
+          ctx.lineTo(p.x, pad.top + plotH);
+          ctx.stroke();
+
+          // DOWN label
+          ctx.fillStyle = '#f43f5e';
+          ctx.font = 'bold 10px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('[DOWN]', p.x, pad.top - 14);
+          ctx.restore();
+        }
+      });
+
+      // Draw series lines
+      seriesList.forEach(s => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        let started = false;
+        chartPointsCache.forEach((p, idx) => {
+          const val = p[s.key];
+          const y = pad.top + plotH - (val / yLimit) * plotH;
+          if (!started) {
+            ctx.moveTo(p.x, y);
+            started = true;
+          } else {
+            ctx.lineTo(p.x, y);
+          }
+        });
+        ctx.stroke();
+
+        // Draw dots
+        chartPointsCache.forEach((p, idx) => {
+          const val = p[s.key];
+          const y = pad.top + plotH - (val / yLimit) * plotH;
+          const isHovered = hoveredPointIndex === idx;
+
+          ctx.beginPath();
+          ctx.arc(p.x, y, isHovered ? 6 : 4, 0, Math.PI * 2);
+          ctx.fillStyle = s.color;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(p.x, y, isHovered ? 6 : 4, 0, Math.PI * 2);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#0d0d10';
+          ctx.stroke();
+
+          if (isHovered) {
+            ctx.beginPath();
+            ctx.arc(p.x, y, 9, 0, Math.PI * 2);
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+        });
+        ctx.restore();
+      });
+    }
+
+    function handleChartMouseMove(e) {
+      if (!chartPointsCache || chartPointsCache.length === 0) return;
+
+      const rect = historyCanvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      let closestIdx = -1;
+      let minDistance = 40;
+
+      chartPointsCache.forEach((p, idx) => {
+        const dist = Math.abs(p.x - mouseX);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIdx = idx;
+        }
+      });
+
+      if (closestIdx !== -1) {
+        if (hoveredPointIndex !== closestIdx) {
+          hoveredPointIndex = closestIdx;
+          drawHistoryChart();
+        }
+
+        const p = chartPointsCache[closestIdx];
+        const statusHtml = !p.reachable ? '<div style="color: #fda4af; font-weight: bold; margin-bottom: 4px;">✖ TARGET DOWN</div>' : '';
+        const newHtml = p.newCount > 0 ? `<div style="color: #ffb020;">+${p.newCount} New Finding(s)</div>` : '';
+        const resHtml = p.resolvedCount > 0 ? `<div style="color: #a3e635;">✔ ${p.resolvedCount} Resolved</div>` : '';
+
+        chartTooltip.style.display = 'block';
+        chartTooltip.innerHTML = `
+          <div style="font-weight: 700; color: #fff; margin-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3px;">
+            Scan #${p.scanNumber} • ${p.timeStr}
+          </div>
+          ${statusHtml}
+          <div style="display: flex; gap: 8px; justify-content: space-between;"><span style="color:#38bdf8;">● Total:</span> <strong>${p.total}</strong></div>
+          <div style="display: flex; gap: 8px; justify-content: space-between;"><span style="color:var(--high-color);">● High:</span> <strong>${p.high}</strong></div>
+          <div style="display: flex; gap: 8px; justify-content: space-between;"><span style="color:var(--med-color);">● Medium:</span> <strong>${p.med}</strong></div>
+          <div style="display: flex; gap: 8px; justify-content: space-between;"><span style="color:var(--accent-primary);">● Low:</span> <strong>${p.low}</strong></div>
+          ${newHtml}
+          ${resHtml}
+        `;
+
+        const tooltipX = Math.min(mouseX + 16, rect.width - 180);
+        const tooltipY = Math.max(10, mouseY - 70);
+        chartTooltip.style.left = `${tooltipX}px`;
+        chartTooltip.style.top = `${tooltipY}px`;
+      } else {
+        handleChartMouseLeave();
+      }
+    }
+
+    function handleChartMouseLeave() {
+      if (hoveredPointIndex !== -1) {
+        hoveredPointIndex = -1;
+        drawHistoryChart();
+      }
+      chartTooltip.style.display = 'none';
+    }
+
+    // =====================================================================
+    // Formatting Helpers
+    // =====================================================================
+
+    function formatTimeStr(date) {
+      if (!(date instanceof Date) || isNaN(date)) return '--:--:--';
+      return date.toTimeString().split(' ')[0];
+    }
+
+    function formatTimestamp(isoStr) {
+      if (!isoStr) return '--';
+      try {
+        const d = new Date(isoStr);
+        return d.toISOString().replace('T', ' ').slice(0, 19);
+      } catch (e) {
+        return isoStr;
+      }
+    }
+
+    function formatTimeAgo(date) {
+      if (!(date instanceof Date) || isNaN(date)) return '--';
+      const seconds = Math.floor((new Date() - date) / 1000);
+      if (seconds < 10) return 'Just now';
+      if (seconds < 60) return `${seconds}s ago`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    }
+
+    function formatDuration(ms) {
+      if (isNaN(ms) || ms < 0) return '0s';
+      const sec = Math.floor(ms / 1000);
+      if (sec < 60) return `${sec}s`;
+      const min = Math.floor(sec / 60);
+      const remainSec = sec % 60;
+      if (min < 60) return `${min}m ${remainSec}s`;
+      const hrs = Math.floor(min / 60);
+      return `${hrs}h ${min % 60}m`;
     }
 
     function renderFindings() {

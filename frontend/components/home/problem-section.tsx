@@ -32,7 +32,7 @@ export default function ProblemSection() {
                 <div className="w-2.5 h-2.5 rounded-full bg-warn-amber" />
                 <div className="w-2.5 h-2.5 rounded-full bg-terminal" />
               </div>
-              <span className="text-muted-body text-[11px] ml-2">sentinel@identity-lane-inspection:~</span>
+              <span className="text-muted-body text-[11px] ml-2">vanguarda@identity-lane-inspection:~</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-alert-red/20 text-alert-red border border-alert-red/30">
@@ -49,7 +49,7 @@ export default function ProblemSection() {
               {/* Alice Request */}
               <div className="rounded-xl bg-[#0e0e11] border border-white/10 p-5 font-mono text-xs space-y-3">
                 <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                  <span className="text-terminal font-bold uppercase">&gt; IDENTITY LANE: ALICE (USER A)</span>
+                  <span className="text-terminal font-bold uppercase">&gt; CALLER CONTEXT: TENANT A (PRIMARY)</span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-muted-body border border-white/10">
                     TARGET: /orders/102
                   </span>
@@ -58,19 +58,19 @@ export default function ProblemSection() {
                 <div className="text-muted-body leading-relaxed">
                   <span className="text-acid font-bold">GET</span> /orders/<span className="text-alert-red font-bold">102</span> HTTP/1.1<br />
                   <span className="text-muted-dim">Host:</span> api.production-store.com<br />
-                  <span className="text-muted-dim">Authorization:</span> Bearer eyJhbGciOi...[Alice&apos;s valid token]<br />
+                  <span className="text-muted-dim">Authorization:</span> Bearer eyJhbGciOi...[Caller A Valid Token]<br />
                   <span className="text-muted-dim">Accept:</span> application/json
                 </div>
 
                 <div className="pt-2 text-[11px] text-muted-dim italic">
-                  Notice: Alice legitimately owns Order #101, but mutates the ID parameter to #102.
+                  Notice: Caller legitimately owns Order #101, but mutates the ID parameter to #102.
                 </div>
               </div>
 
               {/* Leaked Bob Data */}
               <div className="rounded-xl bg-[#0e0e11] border border-alert-red/40 p-5 font-mono text-xs space-y-3 shadow-[0_0_20px_rgba(255,59,71,0.15)]">
                 <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                  <span className="text-alert-red font-bold uppercase">&gt; LEAKED LANE: BOB (USER B)</span>
+                  <span className="text-alert-red font-bold uppercase">&gt; BREACHED ENTITY: TENANT B (VICTIM)</span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-acid/20 text-acid border border-acid/30">
                     HTTP 200 OK
                   </span>
@@ -79,7 +79,7 @@ export default function ProblemSection() {
                 <div className="text-muted-body leading-relaxed">
                   &#123;<br />
                   &nbsp;&nbsp;&quot;order_id&quot;: 102,<br />
-                  &nbsp;&nbsp;&quot;customer_email&quot;: &quot;<span className="text-alert-red font-bold">bob@company.com</span>&quot;,<br />
+                  &nbsp;&nbsp;&quot;customer_email&quot;: &quot;<span className="text-alert-red font-bold">target-victim@tenant-b.internal</span>&quot;,<br />
                   &nbsp;&nbsp;&quot;card_number&quot;: &quot;<span className="text-alert-red font-bold">4242...[redacted]...4242</span>&quot;,<br />
                   &nbsp;&nbsp;&quot;amount_usd&quot;: 649.00<br />
                   &#125;
@@ -87,7 +87,7 @@ export default function ProblemSection() {
 
                 <div className="pt-2 text-[11px] text-alert-red font-semibold flex items-center gap-1.5">
                   <ShieldX className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Breach: The server authenticated Alice, but returned Bob&apos;s private financial data.</span>
+                  <span>Breach: The server authenticated Caller A, but returned Tenant B&apos;s private financial data.</span>
                 </div>
               </div>
             </div>
@@ -96,7 +96,7 @@ export default function ProblemSection() {
             <div className="flex items-start sm:items-center gap-3 p-4 rounded-xl bg-warn-amber/10 border border-warn-amber/30 text-amber-200 text-xs sm:text-sm font-mono">
               <KeyRound className="w-5 h-5 flex-shrink-0 text-warn-amber mt-0.5 sm:mt-0" />
               <div>
-                <strong>The BOLA Flaw Explained:</strong> The authentication gate passed Alice because her token was valid. However, the backend handler <code className="bg-black/40 px-1 py-0.5 rounded text-white">SELECT * FROM orders WHERE id = 102</code> failed to assert that <code className="bg-black/40 px-1 py-0.5 rounded text-white">owner_id === alice.id</code>.
+                <strong>The BOLA Flaw Explained:</strong> The authentication gate passed Caller A because the token was valid. However, the backend handler <code className="bg-black/40 px-1 py-0.5 rounded text-white">SELECT * FROM orders WHERE id = 102</code> failed to assert that <code className="bg-black/40 px-1 py-0.5 rounded text-white">owner_tenant_id === caller.tenant_id</code>.
               </div>
             </div>
           </div>

@@ -100,15 +100,15 @@ export default function ScrollUniverseCanvas({
     const codePoints = new THREE.Points(codeGeom, codeMat);
     scene.add(codePoints);
 
-    // 5. CatmullRomCurve3 Camera Path (6 Scenes)
+    // 5. CatmullRomCurve3 Camera Path (6 Scenes) - set with comfortable depth so 3D stays in background
     const cameraCurve = new THREE.CatmullRomCurve3(
       [
-        new THREE.Vector3(0, 6, 22),       // [00 / HERO] Wide view
-        new THREE.Vector3(4, 2.5, 9),      // [01 / PROBLEM] Dive into BOLA red node
-        new THREE.Vector3(-3, 0.5, 8),     // [02 / THREATS] Mini-scenes cluster
-        new THREE.Vector3(1, -2, 6),       // [03 / HOW IT WORKS] 4 stations
-        new THREE.Vector3(0, 1.5, 14),     // [04 / FINDINGS] Advisory view
-        new THREE.Vector3(0, 4, 19),       // [05 / SECURE] Pull back, shield locked
+        new THREE.Vector3(0, 6, 26),       // [00 / HERO] Wide view
+        new THREE.Vector3(4, 3, 13),       // [01 / PROBLEM] Dive into BOLA red node
+        new THREE.Vector3(-3, 1.5, 12),    // [02 / THREATS] Mini-scenes cluster
+        new THREE.Vector3(1, -1, 10),      // [03 / HOW IT WORKS] 4 stations
+        new THREE.Vector3(0, 2.5, 18),     // [04 / FINDINGS] Advisory view
+        new THREE.Vector3(0, 5, 26),       // [05 / SECURE] Pull back, shield locked in background
       ],
       false,
       'catmullrom',
@@ -151,12 +151,12 @@ export default function ScrollUniverseCanvas({
     shieldGroup.add(shieldWireMesh);
     scene.add(shieldGroup);
 
-    // 7. Radar Sweep & Scanner Ring
+    // 7. Radar Sweep & Scanner Ring (Subtle ambient depth ring)
     const ringGeom = new THREE.TorusGeometry(11, 0.08, 16, 64);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0xd9f99d,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.35,
       blending: THREE.AdditiveBlending,
     });
     const scannerRing = new THREE.Mesh(ringGeom, ringMat);

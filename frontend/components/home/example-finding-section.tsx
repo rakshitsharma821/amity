@@ -44,7 +44,7 @@ export default function ExampleFindingSection() {
                 <div className="w-2.5 h-2.5 rounded-full bg-warn-amber" />
                 <div className="w-2.5 h-2.5 rounded-full bg-terminal" />
               </div>
-              <span className="text-muted-body text-[11px] ml-2">sentinel@security-advisory:~/BOLA-2026-001</span>
+              <span className="text-muted-body text-[11px] ml-2">vanguarda@security-advisory:~/BOLA-2026-001</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-alert-red/20 text-red-200 border border-alert-red/40">
@@ -82,7 +82,7 @@ export default function ExampleFindingSection() {
                 &#123;<br />
                 &nbsp;&nbsp;&quot;order_id&quot;: 102,<br />
                 &nbsp;&nbsp;&quot;user_id&quot;: 48,<br />
-                &nbsp;&nbsp;&quot;customer&quot;: &quot;bob@company.com&quot;,<br />
+                &nbsp;&nbsp;&quot;customer&quot;: &quot;target-user@internal-tenant.org&quot;,<br />
                 &nbsp;&nbsp;&quot;card_number&quot;: &quot;<span className="text-alert-red font-bold">4242...[redacted]...4242</span>&quot;,<br />
                 &nbsp;&nbsp;&quot;amount&quot;: 649.00<br />
                 &#125;

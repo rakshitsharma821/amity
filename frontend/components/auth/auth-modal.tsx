@@ -240,7 +240,7 @@ export default function AuthModal({
               <div className="w-2.5 h-2.5 rounded-full bg-warn-amber" />
               <div className="w-2.5 h-2.5 rounded-full bg-terminal" />
             </div>
-            <span className="text-[11px] text-muted-body ml-2">sentinel@auth-gateway:~</span>
+            <span className="text-[11px] text-muted-body ml-2">vanguarda@auth-gateway:~</span>
           </div>
           <button
             onClick={onClose}
@@ -260,7 +260,7 @@ export default function AuthModal({
           </div>
           <div>
             <h2 id="auth-modal-title" className="text-xl font-bold text-muted-heading">
-              {mode === 'login' && 'Sign in to SentinelAPI'}
+              {mode === 'login' && 'Sign in to Vanguarda-api'}
               {mode === 'signup' && 'Create your account'}
               {mode === 'forgot' && 'Reset your password'}
             </h2>
@@ -326,7 +326,7 @@ export default function AuthModal({
           {/* Honeypot field for spam prevention */}
           <input
             type="text"
-            name="sentinel_bot_check"
+            name="vanguarda_bot_check"
             value={honeypot}
             onChange={(e) => setHoneypot(e.target.value)}
             style={{ display: 'none' }}

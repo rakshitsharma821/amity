@@ -699,13 +699,223 @@ class ScannerEngine:
 # Main CLI Entrypoint
 # =====================================================================
 
+# =====================================================================
+# Continuous Monitoring & History Utilities
+# =====================================================================
+
+def finding_signature(f: Dict[str, Any]) -> str:
+    """Computes a stable identity for a finding across scans."""
+    fid = str(f.get("id", "")).strip()
+    ftype = str(f.get("vulnerability_class") or f.get("type") or "").strip()
+    method = str(f.get("method", "")).strip().upper()
+    endpoint = str(f.get("endpoint", "")).strip()
+    title = str(f.get("title", "")).strip()
+    return f"{fid}|{ftype}|{method}|{endpoint}|{title}"
+
+
+def load_history(history_file: str) -> List[Dict[str, Any]]:
+    """Loads existing scan history array from file, or returns empty list."""
+    if not os.path.exists(history_file):
+        return []
+    try:
+        with open(history_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return data
+    except Exception:
+        pass
+    return []
+
+
+def save_history(history_file: str, history_list: List[Dict[str, Any]]) -> None:
+    """Atomically writes scan history array to disk."""
+    try:
+        with open(history_file, "w", encoding="utf-8") as f:
+            json.dump(history_list, f, indent=2)
+    except Exception as e:
+        print(f"[-] Error writing history to '{history_file}': {e}", file=sys.stderr)
+
+
+def run_scan_iteration(
+    config: Dict[str, Any],
+    client: HttpClient,
+    args: argparse.Namespace,
+    scan_number: int,
+    previous_state: Optional[Dict[str, Any]] = None
+) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
+    """
+    Executes a single end-to-end scan iteration.
+    Detects new findings, resolved findings, and newly discovered endpoints.
+    Returns: (history_entry, current_state)
+    """
+    start_time = time.time()
+    target_base = config.get("target", {}).get("base_url", "http://localhost:4000")
+    timestamp_str = datetime.now(timezone.utc).isoformat()
+
+    print(f"\n{'=' * 65}")
+    print(f"  [SCAN #{scan_number}] Starting assessment at {timestamp_str}")
+    print(f"  Target: {target_base}")
+    print(f"{'=' * 65}")
+
+    # Check target reachability by attempting to fetch OpenAPI spec
+    print("[*] Fetching and parsing OpenAPI 3.0 specification...")
+    try:
+        spec = load_openapi_spec(config, client)
+        spec_title = spec.get("info", {}).get("title", "Unnamed API")
+        spec_version = spec.get("info", {}).get("version", "1.0")
+        current_endpoints = sorted(list(spec.get("paths", {}).keys()))
+        print(f"    [+] Loaded spec: '{spec_title}' (v{spec_version}) with {len(current_endpoints)} paths")
+    except Exception as e:
+        err_msg = str(e)
+        print(f"[!] [DOWN] Target '{target_base}' is unreachable: {err_msg}")
+        duration = round(time.time() - start_time, 2)
+        history_entry = {
+            "timestamp": timestamp_str,
+            "scan_number": scan_number,
+            "target_reachable": False,
+            "downtime_error": err_msg,
+            "findings": [],
+            "new_findings": [],
+            "resolved_findings": [],
+            "new_endpoints": [],
+            "total_findings": 0,
+            "severity_counts": {"High": 0, "Medium": 0, "Low": 0},
+            "duration_seconds": duration
+        }
+        return history_entry, previous_state
+
+    # 1. Endpoint change detection
+    prev_endpoints = set(previous_state.get("endpoints", [])) if previous_state else set()
+    new_endpoints = []
+    if previous_state:
+        for ep in current_endpoints:
+            if ep not in prev_endpoints:
+                new_endpoints.append(ep)
+                print(f"[+] [NEW ENDPOINT] Discovered new API route in spec: {ep}")
+
+    # 2. Authenticate test users
+    print("[*] Authenticating test user identities...")
+    auth = Authenticator(target_base, config.get("auth", {}), client)
+    tokens = auth.authenticate_all()
+
+    for user_key, token in tokens.items():
+        if token:
+            print(f"    [+] {user_key}: Authenticated ({mask_token(token)})")
+        else:
+            print(f"    [-] {user_key}: Failed to authenticate")
+
+    # 3. Execute Security Checks
+    print("\n[*] Commencing vulnerability assessments...")
+    scanner = ScannerEngine(config, spec, tokens, client)
+    findings = scanner.run_all()
+
+    duration = round(time.time() - start_time, 2)
+    severity_counts = {
+        "High": sum(1 for f in findings if f.get("severity") == "High"),
+        "Medium": sum(1 for f in findings if f.get("severity") == "Medium"),
+        "Low": sum(1 for f in findings if f.get("severity") == "Low")
+    }
+
+    # 4. Compare with previous findings (Regression / Resolution Tracking)
+    new_findings = []
+    resolved_findings = []
+
+    if previous_state and previous_state.get("target_reachable", True):
+        prev_findings = previous_state.get("findings", [])
+        prev_map = {finding_signature(f): f for f in prev_findings}
+        curr_map = {finding_signature(f): f for f in findings}
+
+        # Detect new findings
+        for sig, f in curr_map.items():
+            if sig not in prev_map:
+                new_findings.append(f)
+
+        # Detect resolved findings
+        for sig, f in prev_map.items():
+            if sig not in curr_map:
+                resolved_findings.append(f)
+
+        # Print clear one-line console alerts for newly discovered High-severity findings
+        for f in new_findings:
+            sev = f.get("severity", "Low")
+            if str(sev).lower() == "high":
+                print(f"\n[ALERT] New HIGH-severity vulnerability detected: {f.get('title')} ({f.get('endpoint')})")
+            else:
+                print(f"[*] [NEW] New {sev}-severity finding: {f.get('title')} ({f.get('endpoint')})")
+
+        # Print notifications for resolved findings
+        for f in resolved_findings:
+            print(f"[*] [RESOLVED] Vulnerability resolved: {f.get('title')} ({f.get('endpoint')})")
+    else:
+        # First scan run or recovering from downtime
+        new_findings = findings
+        resolved_findings = []
+        for f in findings:
+            if str(f.get("severity", "")).lower() == "high":
+                print(f"\n[ALERT] New HIGH-severity vulnerability detected: {f.get('title')} ({f.get('endpoint')})")
+
+    # 5. Build latest report
+    report = {
+        "scan_metadata": {
+            "scanner": "SentinelAPI v1.0.0",
+            "target_base_url": target_base,
+            "target_spec_title": spec.get("info", {}).get("title", "Unknown"),
+            "timestamp": timestamp_str,
+            "duration_seconds": duration,
+            "total_findings": len(findings),
+            "severity_counts": severity_counts
+        },
+        "findings": findings
+    }
+
+    try:
+        with open(args.out, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        print(f"\n[+] Scan report written to: {args.out}")
+    except Exception as e:
+        print(f"[-] Error writing report to '{args.out}': {e}", file=sys.stderr)
+
+    # 6. Summary Display
+    print("-" * 40)
+    print(f"  Summary: {len(findings)} total findings | New: {len(new_findings)} | Resolved: {len(resolved_findings)}")
+    print(f"  High:   {severity_counts['High']}")
+    print(f"  Medium: {severity_counts['Medium']}")
+    print(f"  Low:    {severity_counts['Low']}")
+    print("-" * 40)
+
+    # 7. Create history entry matching specification
+    history_entry = {
+        "timestamp": timestamp_str,
+        "scan_number": scan_number,
+        "target_reachable": True,
+        "target_base_url": target_base,
+        "target_spec_title": spec.get("info", {}).get("title", "Unknown"),
+        "findings": findings,
+        "new_findings": new_findings,
+        "resolved_findings": resolved_findings,
+        "new_endpoints": new_endpoints,
+        "total_findings": len(findings),
+        "severity_counts": severity_counts,
+        "duration_seconds": duration
+    }
+
+    current_state = {
+        "target_reachable": True,
+        "findings": findings,
+        "endpoints": current_endpoints
+    }
+
+    return history_entry, current_state
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="SentinelAPI - Zero-Trust API Vulnerability Scanner",
+        description="SentinelAPI - Zero-Trust API Vulnerability Scanner & Continuous Monitor",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   python scanner.py --config config.example.json --out findings.json
+  python scanner.py --config config.json --monitor --interval 300
   python scanner.py --config config.json --fail-on high
   python scanner.py --config remote-config.json --i-am-authorized
         """
@@ -719,6 +929,22 @@ Examples:
         "--out",
         default="findings.json",
         help="Path to write the resulting JSON report (default: findings.json)"
+    )
+    parser.add_argument(
+        "--monitor",
+        action="store_true",
+        help="Run continuously in monitoring mode, re-scanning and detecting regressions/new endpoints"
+    )
+    parser.add_argument(
+        "--interval",
+        type=int,
+        default=900,
+        help="Interval in seconds between scans in monitoring mode (default: 900)"
+    )
+    parser.add_argument(
+        "--history",
+        default="history.json",
+        help="Path to JSON file where scan history entries are appended (default: history.json)"
     )
     parser.add_argument(
         "--i-am-authorized",
@@ -735,10 +961,9 @@ Examples:
 
 def main():
     args = parse_args()
-    start_time = time.time()
 
     print("=" * 65)
-    print("  [SENTINEL-API] Zero-Trust API Vulnerability Scanner")
+    print("  [SENTINEL-API] Zero-Trust API Vulnerability Scanner & Monitor")
     print("=" * 65)
 
     # 1. Load Configuration
@@ -761,90 +986,69 @@ def main():
 
     client = HttpClient()
 
-    # 3. Load OpenAPI Specification
-    print("[*] Fetching and parsing OpenAPI 3.0 specification...")
+    # Load existing history
+    history = load_history(args.history)
+    scan_number = len(history) + 1
+    previous_state = None
+
+    if history:
+        # Reconstruct previous state from last valid reachable history entry
+        last_valid = next((h for h in reversed(history) if h.get("target_reachable")), None)
+        if last_valid:
+            previous_state = {
+                "target_reachable": True,
+                "findings": last_valid.get("findings", []),
+                "endpoints": []
+            }
+
+    if not args.monitor:
+        # Single-run mode
+        history_entry, _ = run_scan_iteration(config, client, args, scan_number, previous_state)
+        history.append(history_entry)
+        save_history(args.history, history)
+        print(f"[+] Scan history updated ({len(history)} total runs recorded in {args.history})")
+
+        # CI/CD Threshold Evaluation
+        if args.fail_on:
+            threshold = args.fail_on.lower()
+            counts = history_entry.get("severity_counts", {})
+            fail = False
+            if threshold == "high" and counts.get("High", 0) > 0:
+                fail = True
+            elif threshold == "medium" and (counts.get("High", 0) > 0 or counts.get("Medium", 0) > 0):
+                fail = True
+            elif threshold == "low" and history_entry.get("total_findings", 0) > 0:
+                fail = True
+
+            if fail:
+                print(f"\n[!] CI/CD Gating Alert: Findings equal or exceed threshold '--fail-on {threshold}'. Exiting with code 1.")
+                sys.exit(1)
+
+        print("\n[+] Scan finished successfully.")
+        sys.exit(0)
+
+    # Continuous Monitoring Mode (--monitor)
+    print(f"\n[+] CONTINUOUS MONITORING ACTIVE (Interval: {args.interval}s)")
+    print(f"[*] Appending scan regression history to: {args.history}")
+    print("[*] Press Ctrl+C at any time to pause or exit.\n")
+
+    current_prev_state = previous_state
+
     try:
-        spec = load_openapi_spec(config, client)
-        spec_title = spec.get("info", {}).get("title", "Unnamed API")
-        spec_version = spec.get("info", {}).get("version", "1.0")
-        print(f"    [+] Loaded spec: '{spec_title}' (v{spec_version}) with {len(spec.get('paths', {}))} paths")
-    except Exception as e:
-        print(f"[-] Error loading OpenAPI specification: {e}", file=sys.stderr)
-        sys.exit(1)
+        while True:
+            history_entry, new_state = run_scan_iteration(config, client, args, scan_number, current_prev_state)
+            history.append(history_entry)
+            save_history(args.history, history)
 
-    # 4. Authenticate Test Users
-    print("[*] Authenticating test user identities...")
-    auth = Authenticator(target_base, config.get("auth", {}), client)
-    tokens = auth.authenticate_all()
+            if new_state:
+                current_prev_state = new_state
 
-    for user_key, token in tokens.items():
-        if token:
-            print(f"    [+] {user_key}: Authenticated ({mask_token(token)})")
-        else:
-            print(f"    [-] {user_key}: Failed to authenticate")
-
-    # 5. Execute Security Checks
-    print("\n[*] Commencing vulnerability assessments...")
-    scanner = ScannerEngine(config, spec, tokens, client)
-    findings = scanner.run_all()
-
-    duration = round(time.time() - start_time, 2)
-    severity_counts = {
-        "High": sum(1 for f in findings if f.get("severity") == "High"),
-        "Medium": sum(1 for f in findings if f.get("severity") == "Medium"),
-        "Low": sum(1 for f in findings if f.get("severity") == "Low")
-    }
-
-    # 6. Generate Output Report
-    report = {
-        "scan_metadata": {
-            "scanner": "SentinelAPI v1.0.0",
-            "target_base_url": target_base,
-            "target_spec_title": spec.get("info", {}).get("title", "Unknown"),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "duration_seconds": duration,
-            "total_findings": len(findings),
-            "severity_counts": severity_counts
-        },
-        "findings": findings
-    }
-
-    try:
-        with open(args.out, "w", encoding="utf-8") as f:
-            json.dump(report, f, indent=2)
-        print(f"\n[+] Scan complete in {duration}s. Report written to: {args.out}")
-    except Exception as e:
-        print(f"[-] Error writing report to '{args.out}': {e}", file=sys.stderr)
-
-    # 7. Summary Display
-    print("\n" + "-" * 40)
-    print(f"  Summary: {len(findings)} findings discovered")
-    print(f"  High:   {severity_counts['High']}")
-    print(f"  Medium: {severity_counts['Medium']}")
-    print(f"  Low:    {severity_counts['Low']}")
-    print("-" * 40)
-
-    for idx, f in enumerate(findings, 1):
-        color_tag = "[HIGH]" if f['severity'] == "High" else f"[{f['severity'].upper()}]"
-        print(f"{idx}. {color_tag} {f['title']} ({f['endpoint']})")
-
-    # 8. CI/CD Threshold Evaluation
-    if args.fail_on:
-        threshold = args.fail_on.lower()
-        fail = False
-        if threshold == "high" and severity_counts["High"] > 0:
-            fail = True
-        elif threshold == "medium" and (severity_counts["High"] > 0 or severity_counts["Medium"] > 0):
-            fail = True
-        elif threshold == "low" and len(findings) > 0:
-            fail = True
-
-        if fail:
-            print(f"\n[!] CI/CD Gating Alert: Findings equal or exceed threshold '--fail-on {threshold}'. Exiting with code 1.")
-            sys.exit(1)
-
-    print("\n[+] Scan finished successfully.")
-    sys.exit(0)
+            scan_number += 1
+            print(f"\n[*] Scan #{scan_number - 1} complete. Sleeping for {args.interval} seconds until next scan...")
+            time.sleep(args.interval)
+    except KeyboardInterrupt:
+        print("\n\n[!] Continuous monitoring paused by user (Ctrl+C). History preserved.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

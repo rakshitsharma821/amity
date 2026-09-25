@@ -14,7 +14,7 @@ export default function CtaSection() {
   return (
     <section className="py-24 border-t border-white/10 bg-transparent relative">
       <div className="max-w-4xl mx-auto px-6 text-center">
-        <div className="glass-panel-elevated rounded-3xl p-8 sm:p-14 relative overflow-hidden border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.8)] hud-frame">
+        <div className="glass-panel-elevated bg-[#0a0a0c]/90 rounded-3xl p-8 sm:p-14 relative overflow-hidden border border-white/15 shadow-[0_20px_60px_rgba(0,0,0,0.95)] backdrop-blur-2xl hud-frame">
           <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-warn-amber/15 border border-warn-amber/40 text-amber-200 font-mono text-xs font-bold">
               <Lock className="w-3.5 h-3.5 text-warn-amber" />
@@ -26,11 +26,11 @@ export default function CtaSection() {
             </div>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-muted-heading mb-4 font-mono">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white mb-4 font-mono drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
             <DecodeText text="Verify your API authorization security today." as="span" />
           </h2>
 
-          <p className="max-w-xl mx-auto text-base sm:text-lg text-muted-body mb-10 leading-relaxed font-mono text-sm">
+          <p className="max-w-xl mx-auto text-base sm:text-lg text-zinc-300 mb-10 leading-relaxed font-mono text-sm drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
             Free during public beta for engineering and security teams. Strict domain ownership verification guarantees ethical, non-destructive evaluations.
           </p>
 

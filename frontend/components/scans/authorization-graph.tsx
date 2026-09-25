@@ -1,23 +1,671 @@
 'use client';
 
+import React, { useMemo, useState } from 'react';
+import {
+  Activity,
+  AlertOctagon,
+  ArrowRight,
+  Boxes,
+  Database,
+  Eye,
+  Globe,
+  Layers,
+  Maximize2,
+  Minimize2,
+  RotateCcw,
+  Search,
+  Shield,
+  Users,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import type { GraphEdge, GraphNode } from '@/lib/api/types';
 
-const colorByType: Record<string, string> = { IDENTITY: '#a3e635', ROLE: '#d4d4d8', ENDPOINT: '#fbbf24', RESOURCE: '#fb7185', OBJECT: '#f97316', SENSITIVE_DATA: '#ef4444' };
+interface AuthorizationGraphProps {
+  nodes?: GraphNode[];
+  edges?: GraphEdge[];
+  targetBaseUrl?: string;
+  targetName?: string;
+  scanId?: string;
+}
 
-export function AuthorizationGraph({ nodes, edges }: { nodes: GraphNode[]; edges: GraphEdge[] }) {
-  if (!nodes.length) return <p className="text-sm text-zinc-500">The backend returned no graph nodes for this scan.</p>;
-  const width = 920;
-  const height = Math.max(300, Math.ceil(nodes.length / 4) * 130);
-  const positions = new Map(nodes.map((node, index) => [node.id, { x: 110 + (index % 4) * 230, y: 65 + Math.floor(index / 4) * 130 }]));
-  return <div className="overflow-x-auto rounded-xl border border-white/10 bg-black/25 p-3">
-    <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[760px] w-full" role="img" aria-label="Authorization graph from scan results">
-      <defs><marker id="auth-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#71717a" /></marker></defs>
-      {edges.map((edge, index) => {
-        const a = positions.get(edge.source); const b = positions.get(edge.target);
-        return a && b ? <g key={`${edge.source}-${edge.target}-${index}`}><line x1={a.x + 75} y1={a.y} x2={b.x - 75} y2={b.y} stroke="#52525b" strokeWidth="1.5" markerEnd="url(#auth-arrow)"/><text x={(a.x + b.x) / 2} y={(a.y + b.y) / 2 - 7} fill="#a1a1aa" fontSize="9" textAnchor="middle">{edge.label || edge.type}</text></g> : null;
-      })}
-      {nodes.map((node) => { const p = positions.get(node.id)!; const color = colorByType[node.type] || '#d4d4d8'; return <g key={node.id}><rect x={p.x - 75} y={p.y - 25} width="150" height="50" rx="10" fill="#111113" stroke={color} strokeOpacity=".7"/><text x={p.x} y={p.y - 2} fill={color} fontSize="10" textAnchor="middle">{node.type}</text><text x={p.x} y={p.y + 13} fill="#f4f4f5" fontSize="10" textAnchor="middle">{node.label.slice(0, 24)}</text></g>; })}
-    </svg>
-    <p className="px-2 pb-1 text-xs text-zinc-500">{nodes.length} nodes · {edges.length} relationships · every node and edge is returned by the scan backend</p>
-  </div>;
+type LayerType = 'PRINCIPALS' | 'ENDPOINTS' | 'RESOURCES' | 'OBJECTS' | 'DATA';
+
+interface CategorizedLayer {
+  id: LayerType;
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  color: string;
+  borderColor: string;
+  types: string[];
+}
+
+const LAYERS: CategorizedLayer[] = [
+  {
+    id: 'PRINCIPALS',
+    title: 'Identities & Roles',
+    subtitle: 'Access principals, roles & tenants',
+    icon: Users,
+    color: 'text-sky-400',
+    borderColor: 'border-sky-500/30',
+    types: ['IDENTITY', 'ROLE', 'TENANT'],
+  },
+  {
+    id: 'ENDPOINTS',
+    title: 'API Endpoints',
+    subtitle: 'Routes parsed from OpenAPI',
+    icon: Globe,
+    color: 'text-emerald-400',
+    borderColor: 'border-emerald-500/30',
+    types: ['ENDPOINT'],
+  },
+  {
+    id: 'RESOURCES',
+    title: 'Domain Resources',
+    subtitle: 'Modeled entities & schemas',
+    icon: Database,
+    color: 'text-amber-400',
+    borderColor: 'border-amber-500/30',
+    types: ['RESOURCE'],
+  },
+  {
+    id: 'OBJECTS',
+    title: 'Probed Objects',
+    subtitle: 'Live instances tested for BOLA',
+    icon: Boxes,
+    color: 'text-orange-400',
+    borderColor: 'border-orange-500/30',
+    types: ['OBJECT'],
+  },
+  {
+    id: 'DATA',
+    title: 'Sensitive Assets',
+    subtitle: 'Exposed fields & leak risks',
+    icon: Eye,
+    color: 'text-rose-400',
+    borderColor: 'border-rose-500/30',
+    types: ['SENSITIVE_DATA'],
+  },
+];
+
+const nodeColorConfig: Record<string, { bg: string; border: string; text: string; glow: string; badge: string }> = {
+  IDENTITY: { bg: '#0c1d2e', border: '#38bdf8', text: '#7dd3fc', glow: 'rgba(56, 189, 248, 0.25)', badge: 'Identity' },
+  ROLE: { bg: '#1e1435', border: '#c084fc', text: '#e9d5ff', glow: 'rgba(192, 132, 252, 0.25)', badge: 'Role' },
+  TENANT: { bg: '#291024', border: '#f472b6', text: '#fbcfe8', glow: 'rgba(244, 114, 182, 0.25)', badge: 'Tenant' },
+  ENDPOINT: { bg: '#06281e', border: '#34d399', text: '#a7f3d0', glow: 'rgba(52, 211, 153, 0.25)', badge: 'Endpoint' },
+  RESOURCE: { bg: '#261c06', border: '#fbbf24', text: '#fde68a', glow: 'rgba(251, 191, 36, 0.25)', badge: 'Resource' },
+  OBJECT: { bg: '#2a1408', border: '#fb923c', text: '#fed7aa', glow: 'rgba(251, 146, 60, 0.25)', badge: 'Object' },
+  SENSITIVE_DATA: { bg: '#2e0a12', border: '#f43f5e', text: '#fecdd3', glow: 'rgba(244, 63, 94, 0.35)', badge: 'Sensitive' },
+};
+
+function getLayerForType(type: string): LayerType {
+  for (const layer of LAYERS) {
+    if (layer.types.includes(type)) return layer.id;
+  }
+  return 'RESOURCES';
+}
+
+const LAYER_WIDTH = 200;
+const LAYER_GAP = 32;
+const PADDING_X = 30;
+const PADDING_Y = 65;
+const NODE_WIDTH = 175;
+const NODE_HEIGHT = 52;
+const VERTICAL_GAP = 18;
+
+export function AuthorizationGraph({ nodes = [], edges = [], targetBaseUrl, targetName, scanId }: AuthorizationGraphProps) {
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [fitToWidth, setFitToWidth] = useState(true);
+
+  // Group nodes by hierarchical layers & calculate coordinates
+  const { layerNodes, activeLayers, nodePositionMap, svgWidth, svgHeight, violationEdgesCount } = useMemo(() => {
+    const layerMap: Record<LayerType, GraphNode[]> = {
+      PRINCIPALS: [],
+      ENDPOINTS: [],
+      RESOURCES: [],
+      OBJECTS: [],
+      DATA: [],
+    };
+
+    const query = searchQuery.toLowerCase().trim();
+
+    nodes.forEach((node) => {
+      const matchesSearch =
+        !query ||
+        node.label.toLowerCase().includes(query) ||
+        node.id.toLowerCase().includes(query) ||
+        node.type.toLowerCase().includes(query);
+      if (!matchesSearch) return;
+
+      const layer = getLayerForType(node.type);
+      layerMap[layer].push(node);
+    });
+
+    const activeLayers = LAYERS.filter((l) => layerMap[l.id].length > 0);
+    const numLayers = Math.max(1, activeLayers.length);
+    const width = Math.max(900, PADDING_X * 2 + numLayers * LAYER_WIDTH + (numLayers - 1) * LAYER_GAP);
+
+    let maxNodesInLayer = 1;
+    activeLayers.forEach((l) => {
+      maxNodesInLayer = Math.max(maxNodesInLayer, layerMap[l.id].length);
+    });
+
+    const calculatedHeight = Math.max(460, PADDING_Y * 2 + maxNodesInLayer * (NODE_HEIGHT + VERTICAL_GAP));
+
+    const posMap = new Map<string, { x: number; y: number; width: number; height: number; layer: LayerType }>();
+
+    activeLayers.forEach((layerDef, colIdx) => {
+      const columnNodes = layerMap[layerDef.id];
+      const columnX = PADDING_X + colIdx * (LAYER_WIDTH + LAYER_GAP) + LAYER_WIDTH / 2;
+      const totalColHeight = columnNodes.length * NODE_HEIGHT + (columnNodes.length - 1) * VERTICAL_GAP;
+      const startY = (calculatedHeight - totalColHeight) / 2 + NODE_HEIGHT / 2;
+
+      columnNodes.forEach((node, rowIdx) => {
+        const y = startY + rowIdx * (NODE_HEIGHT + VERTICAL_GAP);
+        posMap.set(node.id, {
+          x: columnX,
+          y,
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
+          layer: layerDef.id,
+        });
+      });
+    });
+
+    const violationCount = edges.filter(
+      (e) => e.type === 'UNAUTHORIZED_ACCESS' || e.type === 'CROSSES_TENANT'
+    ).length;
+
+    return {
+      layerNodes: layerMap,
+      activeLayers,
+      nodePositionMap: posMap,
+      svgWidth: width,
+      svgHeight: calculatedHeight,
+      violationEdgesCount: violationCount,
+    };
+  }, [nodes, edges, searchQuery]);
+
+  const selectedNode = useMemo(() => {
+    if (!selectedNodeId) return null;
+    return nodes.find((n) => n.id === selectedNodeId) || null;
+  }, [nodes, selectedNodeId]);
+
+  const activeFocusId = selectedNodeId || hoveredNodeId;
+  const connectedEdgeSet = useMemo(() => {
+    if (!activeFocusId) return new Set<string>();
+    const set = new Set<string>();
+    edges.forEach((edge, idx) => {
+      if (edge.source === activeFocusId || edge.target === activeFocusId) {
+        set.add(`${edge.source}:${edge.target}:${idx}`);
+      }
+    });
+    return set;
+  }, [edges, activeFocusId]);
+
+  const connectedNodeIds = useMemo(() => {
+    if (!activeFocusId) return new Set<string>();
+    const set = new Set<string>([activeFocusId]);
+    edges.forEach((edge) => {
+      if (edge.source === activeFocusId) set.add(edge.target);
+      if (edge.target === activeFocusId) set.add(edge.source);
+    });
+    return set;
+  }, [edges, activeFocusId]);
+
+  if (!nodes || nodes.length === 0) {
+    return (
+      <div className="rounded-2xl border border-white/10 bg-[#111113]/90 p-8 text-center">
+        <Layers className="mx-auto h-10 w-10 text-zinc-600 mb-3" />
+        <h3 className="text-base font-medium text-zinc-200">No authorization graph generated yet</h3>
+        <p className="mt-1 text-sm text-zinc-500 max-w-md mx-auto">
+          Start a scan against a registered base API URL to automatically model OpenAPI endpoints, resource boundaries, and access relationships.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#111113]/90 backdrop-blur-md overflow-hidden shadow-2xl flex flex-col">
+      {/* Top Header & Context Bar */}
+      <div className="border-b border-white/10 bg-black/40 p-4 sm:p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-lime-400 animate-pulse" />
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-lime-400">
+                Live Authorization Model
+              </span>
+              {targetBaseUrl && (
+                <span className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-[11px] text-zinc-300">
+                  {targetBaseUrl}
+                </span>
+              )}
+            </div>
+            <h3 className="mt-1 text-lg font-bold text-white flex items-center gap-2">
+              {targetName || 'API Authorization Graph & Blast Radius'}
+            </h3>
+            <p className="mt-0.5 text-xs text-zinc-400">
+              Deterministic graph generated from OpenAPI routes and authenticated sandbox probes.
+            </p>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-zinc-500">Nodes</p>
+              <p className="font-mono text-sm font-bold text-white">{nodes.length}</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-center">
+              <p className="text-[10px] uppercase tracking-wider text-zinc-500">Relationships</p>
+              <p className="font-mono text-sm font-bold text-sky-300">{edges.length}</p>
+            </div>
+            {violationEdgesCount > 0 ? (
+              <div className="rounded-lg border border-rose-500/30 bg-rose-950/40 px-3 py-1.5 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-rose-300">Violations</p>
+                <p className="font-mono text-sm font-bold text-rose-400">{violationEdgesCount} BOLA/BFLA</p>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/30 px-3 py-1.5 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-emerald-300">Violations</p>
+                <p className="font-mono text-sm font-bold text-emerald-400">0 Breaches</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Search and Zoom Controls */}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-3">
+          <div className="flex items-center gap-2 flex-1 max-w-sm">
+            <div className="relative w-full">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search endpoints, identities, or resources..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-black/50 pl-8 pr-8 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-lime-400"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-zinc-500 hover:text-white"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                setFitToWidth(!fitToWidth);
+                setZoomLevel(1);
+              }}
+              className={`rounded-lg border px-2.5 py-1 text-xs font-mono flex items-center gap-1.5 transition-colors ${
+                fitToWidth
+                  ? 'border-lime-400/40 bg-lime-400/10 text-lime-400'
+                  : 'border-white/10 bg-white/5 text-zinc-400 hover:text-white'
+              }`}
+              title={fitToWidth ? 'Switch to Horizontal Scroll Mode' : 'Fit Entire Topology to Screen Width'}
+            >
+              {fitToWidth ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              <span>{fitToWidth ? 'Fit: Auto' : 'Fit: 100%'}</span>
+            </button>
+            <button
+              onClick={() => {
+                setFitToWidth(false);
+                setZoomLevel((z) => Math.min(1.5, z + 0.1));
+              }}
+              className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white"
+              title="Zoom In"
+            >
+              <ZoomIn className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setFitToWidth(false);
+                setZoomLevel((z) => Math.max(0.7, z - 0.1));
+              }}
+              className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white"
+              title="Zoom Out"
+            >
+              <ZoomOut className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                setZoomLevel(1);
+                setFitToWidth(true);
+              }}
+              className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white"
+              title="Reset View"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main SVG Graph Canvas */}
+      <div className="relative overflow-auto bg-[#0a0a0c] p-4 min-h-[460px] max-h-[620px] scrollbar-thin scrollbar-thumb-zinc-800">
+        <div style={{ 
+          transform: zoomLevel !== 1 ? `scale(${zoomLevel})` : undefined, 
+          transformOrigin: 'top left', 
+          transition: 'transform 0.2s ease-out',
+          width: fitToWidth && zoomLevel === 1 ? '100%' : undefined 
+        }}>
+          <svg
+            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+            width={fitToWidth && zoomLevel === 1 ? '100%' : svgWidth}
+            height={fitToWidth && zoomLevel === 1 ? 'auto' : svgHeight}
+            className={fitToWidth && zoomLevel === 1 ? 'w-full h-auto select-none' : 'select-none'}
+            role="img"
+            aria-label="Layered API Authorization Topology Graph"
+          >
+            <defs>
+              <marker id="arrow-normal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#71717a" />
+              </marker>
+              <marker id="arrow-highlighted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#38bdf8" />
+              </marker>
+              <marker id="arrow-violation" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 1 L 9 5 L 0 9 z" fill="#ef4444" />
+              </marker>
+
+              <pattern id="graph-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                <circle cx="12" cy="12" r="0.8" fill="#27272a" />
+              </pattern>
+            </defs>
+
+            <rect width={svgWidth} height={svgHeight} fill="url(#graph-grid)" opacity="0.7" />
+
+            {/* Render Column Layers */}
+            {activeLayers.map((layer, colIdx) => {
+              const activeCount = layerNodes[layer.id].length;
+              const xPos = PADDING_X + colIdx * (LAYER_WIDTH + LAYER_GAP) + LAYER_WIDTH / 2;
+              return (
+                <g key={layer.id}>
+                  <rect
+                    x={xPos - LAYER_WIDTH / 2}
+                    y={15}
+                    width={LAYER_WIDTH}
+                    height={svgHeight - 30}
+                    rx={14}
+                    fill="#131317"
+                    fillOpacity="0.4"
+                    stroke="#27272a"
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                  />
+                  <text
+                    x={xPos}
+                    y={42}
+                    fill="#a1a1aa"
+                    fontSize="11"
+                    fontWeight="600"
+                    textAnchor="middle"
+                    className="tracking-wider uppercase font-mono"
+                  >
+                    {layer.title} ({activeCount})
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Render Curved Bezier Edges */}
+            {edges.map((edge, index) => {
+              const src = nodePositionMap.get(edge.source);
+              const tgt = nodePositionMap.get(edge.target);
+              if (!src || !tgt) return null;
+
+              const isViolation = edge.type === 'UNAUTHORIZED_ACCESS' || edge.type === 'CROSSES_TENANT';
+              const edgeKey = `${edge.source}:${edge.target}:${index}`;
+              const isFocused = connectedEdgeSet.has(edgeKey);
+              const isDimmed = activeFocusId && !isFocused;
+
+              const x1 = src.x + src.width / 2;
+              const y1 = src.y;
+              const x2 = tgt.x - tgt.width / 2;
+              const y2 = tgt.y;
+
+              const dx = Math.max(40, (x2 - x1) * 0.45);
+              const pathD = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+              const midX = (x1 + x2) / 2;
+              const midY = (y1 + y2) / 2;
+
+              return (
+                <g key={edgeKey} opacity={isDimmed ? 0.15 : 1} className="transition-opacity duration-200">
+                  <path
+                    d={pathD}
+                    fill="none"
+                    stroke={isViolation ? '#ef4444' : isFocused ? '#38bdf8' : '#52525b'}
+                    strokeWidth={isViolation ? 2.5 : isFocused ? 2 : 1.2}
+                    strokeDasharray={isViolation ? '5 3' : undefined}
+                    markerEnd={isViolation ? 'url(#arrow-violation)' : isFocused ? 'url(#arrow-highlighted)' : 'url(#arrow-normal)'}
+                  />
+                  {(edge.label || isViolation) && (
+                    <g transform={`translate(${midX}, ${midY})`}>
+                      <rect
+                        x="-45"
+                        y="-9"
+                        width="90"
+                        height="18"
+                        rx="4"
+                        fill={isViolation ? '#450a0a' : '#18181b'}
+                        stroke={isViolation ? '#ef4444' : '#3f3f46'}
+                        strokeWidth="1"
+                      />
+                      <text
+                        x="0"
+                        y="3"
+                        fill={isViolation ? '#fca5a5' : '#a1a1aa'}
+                        fontSize="8.5"
+                        fontWeight={isViolation ? '700' : '500'}
+                        textAnchor="middle"
+                        className="font-mono select-none"
+                      >
+                        {isViolation ? 'UNAUTHORIZED' : (edge.label || edge.type).slice(0, 14)}
+                      </text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Render Nodes */}
+            {Array.from(nodePositionMap.entries()).map(([nodeId, pos]) => {
+              const node = nodes.find((n) => n.id === nodeId);
+              if (!node) return null;
+
+              const style = nodeColorConfig[node.type] || nodeColorConfig.RESOURCE;
+              const isSelected = selectedNodeId === node.id;
+              const isHovered = hoveredNodeId === node.id;
+              const isConnected = connectedNodeIds.has(node.id);
+              const isDimmed = activeFocusId && !isConnected;
+
+              return (
+                <g
+                  key={node.id}
+                  transform={`translate(${pos.x - pos.width / 2}, ${pos.y - pos.height / 2})`}
+                  onClick={() => setSelectedNodeId(isSelected ? null : node.id)}
+                  onMouseEnter={() => setHoveredNodeId(node.id)}
+                  onMouseLeave={() => setHoveredNodeId(null)}
+                  opacity={isDimmed ? 0.25 : 1}
+                  className="cursor-pointer transition-all duration-200"
+                >
+                  {(isSelected || isHovered) && (
+                    <rect
+                      x="-3"
+                      y="-3"
+                      width={pos.width + 6}
+                      height={pos.height + 6}
+                      rx="12"
+                      fill="none"
+                      stroke={style.border}
+                      strokeWidth="2.5"
+                      strokeOpacity="0.8"
+                    />
+                  )}
+
+                  <rect
+                    x="0"
+                    y="0"
+                    width={pos.width}
+                    height={pos.height}
+                    rx="10"
+                    fill={style.bg}
+                    stroke={isSelected ? '#ffffff' : style.border}
+                    strokeWidth={isSelected ? '2' : '1.2'}
+                    strokeOpacity={isSelected ? 1 : 0.75}
+                  />
+
+                  <g transform="translate(10, 16)">
+                    <rect x="0" y="-10" width="60" height="14" rx="3" fill="#000000" fillOpacity="0.4" />
+                    <text
+                      x="30"
+                      y="0"
+                      fill={style.text}
+                      fontSize="8"
+                      fontWeight="700"
+                      textAnchor="middle"
+                      className="font-mono uppercase tracking-wider"
+                    >
+                      {style.badge}
+                    </text>
+                  </g>
+
+                  <text x="10" y="36" fill="#f4f4f5" fontSize="11" fontWeight="600" className="font-sans">
+                    {node.label.length > 18 ? `${node.label.slice(0, 16)}…` : node.label}
+                  </text>
+
+                  <text x="10" y="48" fill="#71717a" fontSize="8.5" className="font-mono">
+                    {node.id.length > 22 ? `${node.id.slice(0, 20)}…` : node.id}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+
+      {/* Node Details Inspector */}
+      {selectedNode && (
+        <div className="border-t border-white/10 bg-black/60 p-4 sm:p-5 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="mt-0.5 rounded-lg p-2"
+                style={{
+                  backgroundColor: nodeColorConfig[selectedNode.type]?.bg || '#18181b',
+                  borderColor: nodeColorConfig[selectedNode.type]?.border || '#3f3f46',
+                  borderWidth: 1,
+                }}
+              >
+                <Shield className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase font-bold text-black"
+                    style={{ backgroundColor: nodeColorConfig[selectedNode.type]?.border || '#d4d4d8' }}
+                  >
+                    {selectedNode.type}
+                  </span>
+                  <span className="font-mono text-xs text-zinc-500">{selectedNode.id}</span>
+                </div>
+                <h4 className="mt-1 text-base font-semibold text-white">{selectedNode.label}</h4>
+                {selectedNode.properties && Object.keys(selectedNode.properties).length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {Object.entries(selectedNode.properties).map(([k, v]) => (
+                      <span key={k} className="rounded bg-white/5 px-2 py-0.5 font-mono text-[11px] text-zinc-300">
+                        {k}: {Array.isArray(v) ? v.join(', ') : String(v)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSelectedNodeId(null)}
+              className="rounded-lg border border-white/10 p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 border-t border-white/5 pt-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+                Incoming Relationships
+              </p>
+              <ul className="space-y-1 text-xs">
+                {edges.filter((e) => e.target === selectedNode.id).map((e, idx) => (
+                  <li key={idx} className="flex items-center gap-2 rounded bg-black/40 px-2.5 py-1 text-zinc-300">
+                    <span className="font-mono text-sky-400">{e.source}</span>
+                    <ArrowRight className="h-3 w-3 text-zinc-600 shrink-0" />
+                    <span className="font-mono text-[10px] text-amber-300">[{e.type}]</span>
+                  </li>
+                ))}
+                {edges.filter((e) => e.target === selectedNode.id).length === 0 && (
+                  <p className="text-zinc-600 italic">No inbound connections</p>
+                )}
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-1.5">
+                Outgoing Probes & Access
+              </p>
+              <ul className="space-y-1 text-xs">
+                {edges.filter((e) => e.source === selectedNode.id).map((e, idx) => (
+                  <li key={idx} className="flex items-center gap-2 rounded bg-black/40 px-2.5 py-1 text-zinc-300">
+                    <span className="font-mono text-[10px] text-amber-300">[{e.type}]</span>
+                    <ArrowRight className="h-3 w-3 text-zinc-600 shrink-0" />
+                    <span
+                      className={`font-mono ${
+                        e.type === 'UNAUTHORIZED_ACCESS' ? 'text-rose-400 font-bold' : 'text-sky-400'
+                      }`}
+                    >
+                      {e.target}
+                    </span>
+                  </li>
+                ))}
+                {edges.filter((e) => e.source === selectedNode.id).length === 0 && (
+                  <p className="text-zinc-600 italic">No outbound connections</p>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer Legend */}
+      <div className="border-t border-white/10 bg-black/30 px-4 py-3 text-xs text-zinc-400 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          <span className="text-zinc-500 text-[11px] uppercase font-mono tracking-wider">Legend:</span>
+          {Object.entries(nodeColorConfig).map(([type, cfg]) => (
+            <div key={type} className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cfg.border }} />
+              <span className="text-[11px] text-zinc-300">{cfg.badge}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4 bg-rose-500" />
+            <span className="text-[11px] text-rose-300">Breach / BOLA Violation</span>
+          </div>
+        </div>
+
+        <p className="text-[11px] text-zinc-500">Click any node to inspect access paths & properties</p>
+      </div>
+    </div>
+  );
 }

@@ -5,7 +5,7 @@ import { siteConfig } from '@/site.config';
 
 export const metadata: Metadata = {
   title: 'Acceptable Use Policy',
-  description: 'Standards and ethical obligations for scanning APIs with SentinelAPI.',
+  description: 'Standards and ethical obligations for scanning APIs with Vanguarda-api.',
 };
 
 export default function AcceptableUsePage() {

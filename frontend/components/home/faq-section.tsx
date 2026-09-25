@@ -9,10 +9,10 @@ export default function FaqSection() {
   const faqs = [
     {
       q: 'Why is domain ownership verification strictly mandatory before scanning?',
-      a: 'Zero-trust security requires accountability. To prevent SentinelAPI from ever being turned into an attack tool against third-party systems, users must prove domain control via either a DNS TXT record or a /.well-known verification file. Only confirmed targets can be audited.',
+      a: 'Zero-trust security requires accountability. To prevent Vanguarda-api from ever being turned into an attack tool against third-party systems, users must prove domain control via either a DNS TXT record or a /.well-known verification file. Only confirmed targets can be audited.',
     },
     {
-      q: 'Why does SentinelAPI require credentials for two test accounts?',
+      q: 'Why does Vanguarda-api require credentials for two test accounts?',
       a: 'BOLA (Broken Object Level Authorization) cannot be accurately tested with a single user or without credentials. By logging into two isolated sandbox accounts (User A and User B), the engine determines whether User A can read User B’s private resources. This approach eliminates the high false-positive rate of generic unauthenticated vulnerability scanners.',
     },
     {
@@ -20,12 +20,12 @@ export default function FaqSection() {
       a: 'Never in plain text. Session tokens are held ephemerally in memory during active scans. When test credentials are configured for automated recurring checks, they are encrypted server-side using AES-256 before persistence. Discovered tokens in reports are always masked (e.g. Bearer eyJ...[redacted]).',
     },
     {
-      q: 'Can SentinelAPI run inside CI/CD pipelines to block vulnerable PRs?',
-      a: 'Yes. The SentinelAPI CLI engine includes a --fail-on flag (e.g. --fail-on high), which exits with a non-zero exit code if high-severity authorization flaws or unmasked card exposures are detected, cleanly failing the build in GitHub Actions, GitLab CI, or CircleCI.',
+      q: 'Can Vanguarda-api run inside CI/CD pipelines to block vulnerable PRs?',
+      a: 'Yes. The Vanguarda-api CLI engine includes a --fail-on flag (e.g. --fail-on high), which exits with a non-zero exit code if high-severity authorization flaws or unmasked card exposures are detected, cleanly failing the build in GitHub Actions, GitLab CI, or CircleCI.',
     },
     {
       q: 'Will the scanner overwhelm or degrade my API server?',
-      a: 'No. SentinelAPI enforces bounded request bursts (maximum 30-50 requests per endpoint during rate-limit evaluations) and low concurrency to ensure your sandbox or staging environments remain fully operational throughout the audit.',
+      a: 'No. Vanguarda-api enforces bounded request bursts (maximum 30-50 requests per endpoint during rate-limit evaluations) and low concurrency to ensure your sandbox or staging environments remain fully operational throughout the audit.',
     },
     {
       q: 'What versions of API specifications do you support?',

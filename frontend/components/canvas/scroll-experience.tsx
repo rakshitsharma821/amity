@@ -23,6 +23,9 @@ export default function ScrollExperience() {
       {/* 3D Threat Map Canvas — Persistent, Immediate, and Full Fidelity */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <ScrollUniverseCanvas onLogAlert={setActiveAlert} />
+        {/* Ambient background depth scrim to keep 3D elements atmospheric and ensure foreground text is 100% crisp */}
+        <div className="absolute inset-0 bg-[#0a0a0b]/60 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,10,11,0.85)_85%)] pointer-events-none" />
       </div>
 
       {/* Cyber SOC Command Console HUD */}
