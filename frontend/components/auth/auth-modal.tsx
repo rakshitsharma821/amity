@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Lock, Mail, Shield, X, AlertCircle, Zap } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, Shield, X, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GithubIcon, GoogleIcon } from '@/components/icons/social-icons';
 import { createClient } from '@/lib/supabase/client';
@@ -178,21 +178,12 @@ export default function AuthModal({
     }
   };
 
-  const handleInstantDemoLogin = () => {
-    document.cookie = 'vanguard_demo_session=true; path=/; max-age=86400';
-    if (onSuccess) onSuccess();
-    onClose();
-    router.push('/dashboard');
-    router.refresh();
-  };
-
   const handleOAuth = async (provider: 'github' | 'google') => {
     if (mode === 'signup' && !acceptedTerms) {
       setErrorMessage('Please accept the Terms and Privacy Policy before creating an account.');
       return;
     }
     setLoading(true);
-    setErrorMessage(null);
     const supabase = createClient();
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -202,10 +193,10 @@ export default function AuthModal({
         },
       });
       if (error) {
-        setErrorMessage(`OAuth Notice: ${error.message}. If provider is not enabled in Supabase, use 1-Click Instant Demo Login.`);
+        setErrorMessage(`OAuth authentication failed: ${error.message}`);
       }
     } catch {
-      setErrorMessage('OAuth provider is not enabled in Supabase Console. Please use 1-Click Instant Demo Login.');
+      setErrorMessage('OAuth connection error.');
     } finally {
       setLoading(false);
     }
@@ -280,33 +271,6 @@ export default function AuthModal({
             </p>
           </div>
         </div>
-
-        {/* 1-Click Instant Demo Login (Judge / Examiner Access) */}
-        {mode !== 'forgot' && (
-          <div className="mb-5 p-3.5 rounded-xl bg-lime-400/10 border border-lime-400/30">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-mono font-bold text-lime-400 flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 fill-lime-400" />
-                EVALUATOR & JUDGE ACCESS
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-lime-400/20 text-lime-300 font-semibold">
-                Instant
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-400 mb-2.5">
-              Bypass OAuth configuration and open the verified console immediately:
-            </p>
-            <button
-              type="button"
-              onClick={handleInstantDemoLogin}
-              disabled={loading}
-              className="w-full py-2 px-3 rounded-lg bg-lime-400 hover:bg-lime-300 text-black font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(163,230,53,0.3)] transition-all cursor-pointer"
-            >
-              <Zap className="w-3.5 h-3.5 fill-black" />
-              <span>⚡ 1-Click Instant Demo Login</span>
-            </button>
-          </div>
-        )}
 
         {/* Tab Switcher */}
         {mode !== 'forgot' && (
@@ -541,9 +505,6 @@ export default function AuthModal({
                 <span>Google</span>
               </button>
             </div>
-            <p className="mt-2.5 text-center text-[10px] text-zinc-500 font-mono">
-              Notice: OAuth requires Google/GitHub enabled in Supabase Console. For instant testing, use 1-Click Instant Demo Login above.
-            </p>
           </>
         )}
         </div>
