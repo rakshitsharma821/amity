@@ -37,7 +37,7 @@ export default function HowItWorksPage() {
       title: 'Dual-Context Authentication',
       icon: Users,
       summary:
-        'To accurately test authorization, Vangaurd-api provisions sessions for two separate test entities: User A (the requester/attacker context) and User B (the victim/resource owner context).',
+        'To accurately test authorization, VANGAURD-API provisions sessions for two separate test entities: User A (the requester/attacker context) and User B (the victim/resource owner context).',
       terminalSnippet: `[AUTH_SESSION_A] Authenticated User A -> uuid: 09af-4421
 [AUTH_SESSION_B] Authenticated User B -> uuid: 88ba-1109
 [ISOLATION] Context tokens securely buffered in memory`,
@@ -94,7 +94,7 @@ export default function HowItWorksPage() {
           <span>TECHNICAL WORKFLOW</span>
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-muted-heading mb-4">
-          How Vangaurd-api verifies authorization boundaries.
+          How VANGAURD-API verifies authorization boundaries.
         </h1>
         <p className="text-lg text-muted-body leading-relaxed">
           Authorization flaws cannot be deduced from static syntax alone. They require active, multi-session cross-checks to prove that one authenticated user can access another user’s records.
@@ -111,7 +111,7 @@ export default function HowItWorksPage() {
       >
         <Lock className="w-5 h-5 flex-shrink-0 text-warn-amber mt-0.5" />
         <div>
-          <strong className="text-white">Mandatory Pre-Flight Guardrail:</strong> Before any scan is dispatched, our platform requires domain ownership verification via DNS TXT or <code className="bg-black/40 px-1 py-0.5 rounded text-white font-mono">/.well-known/vangaurd-api-verify.txt</code>. Vangaurd-api cannot be pointed at arbitrary third-party targets.
+          <strong className="text-white">Mandatory Pre-Flight Guardrail:</strong> Before any scan is dispatched, our platform requires domain ownership verification via DNS TXT or <code className="bg-black/40 px-1 py-0.5 rounded text-white font-mono">/.well-known/vangaurd-api-verify.txt</code>. VANGAURD-API cannot be pointed at arbitrary third-party targets.
         </div>
       </motion.div>
 

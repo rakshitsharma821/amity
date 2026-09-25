@@ -60,7 +60,7 @@ export default function DocsPage() {
           <span>DOCUMENTATION & SPECIFICATION</span>
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-muted-heading mb-4">
-          Vangaurd-api Documentation
+          VANGAURD-API Documentation
         </h1>
         <p className="text-lg text-muted-body leading-relaxed">
           Learn how to verify your API domain, configure dual-user authentication profiles, and triage zero-trust authorization findings.
@@ -136,7 +136,7 @@ export default function DocsPage() {
               2. Mandatory Ownership Verification
             </h2>
             <p className="text-sm text-muted-body mb-6 leading-relaxed">
-              Vangaurd-api offers two non-intrusive methods to verify domain ownership. Verification takes under 60 seconds.
+              VANGAURD-API offers two non-intrusive methods to verify domain ownership. Verification takes under 60 seconds.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -176,7 +176,7 @@ export default function DocsPage() {
               3. Specification Formatting
             </h2>
             <p className="text-sm text-muted-body mb-6 leading-relaxed">
-              Vangaurd-api ingests valid OpenAPI 3.0.x and 3.1.x definitions in JSON or YAML. For optimal testing, ensure:
+              VANGAURD-API ingests valid OpenAPI 3.0.x and 3.1.x definitions in JSON or YAML. For optimal testing, ensure:
             </p>
 
             <ul className="space-y-3 text-sm text-muted-body mb-6">
@@ -217,7 +217,7 @@ security:
               4. Understanding Findings
             </h2>
             <p className="text-sm text-muted-body leading-relaxed">
-              All reports output normalized, machine-readable findings strictly mapped to the Vangaurd-api finding schema. Explore the interactive breakdown below:
+              All reports output normalized, machine-readable findings strictly mapped to the VANGAURD-API finding schema. Explore the interactive breakdown below:
             </p>
 
             <FindingAnatomyCard />

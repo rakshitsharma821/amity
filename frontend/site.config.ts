@@ -39,8 +39,8 @@ export interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-  name: 'Vangaurd-api',
-  legalName: 'Vangaurd-api Technologies Inc.',
+  name: 'VANGAURD-API',
+  legalName: 'VANGAURD-API Technologies Inc.',
   tagline: 'Find the API vulnerability before the breach headline does.',
   description:
     'Production-grade, zero-trust API security platform. Discover Broken Object Level Authorization (BOLA), unmasked credential leaks, and missing rate limits from your OpenAPI contracts before attackers do.',
@@ -85,6 +85,6 @@ export const siteConfig: SiteConfig = {
   },
   beta: {
     isPublicBeta: true,
-    bannerText: 'Vangaurd-api is currently in Free Public Beta for authorized engineering teams.',
+    bannerText: 'VANGAURD-API is currently in Free Public Beta for authorized engineering teams.',
   },
 };

@@ -5,7 +5,7 @@ import { siteConfig } from '@/site.config';
 
 export const metadata: Metadata = {
   title: 'Acceptable Use Policy',
-  description: 'Standards and ethical obligations for scanning APIs with Vangaurd-api.',
+  description: 'Standards and ethical obligations for scanning APIs with VANGAURD-API.',
 };
 
 export default function AcceptableUsePage() {

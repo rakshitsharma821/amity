@@ -260,7 +260,7 @@ export default function AuthModal({
           </div>
           <div>
             <h2 id="auth-modal-title" className="text-xl font-bold text-muted-heading">
-              {mode === 'login' && 'Sign in to Vangaurd-api'}
+              {mode === 'login' && 'Sign in to VANGAURD-API'}
               {mode === 'signup' && 'Create your account'}
               {mode === 'forgot' && 'Reset your password'}
             </h2>

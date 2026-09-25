@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vangaurd-api — Zero-Trust API Vulnerability Dashboard</title>
+  <title>VANGAURD-API — Zero-Trust API Vulnerability Dashboard</title>
   <style>
     :root {
       --bg-primary: #0a0a0b;
@@ -983,7 +983,7 @@
       <div class="brand">
         <div class="brand-icon">🛡️</div>
         <div>
-          <h1>Vangaurd-api</h1>
+          <h1>VANGAURD-API</h1>
           <p>Zero-Trust API Vulnerability Scanner • Executive & Technical Report</p>
         </div>
       </div>
@@ -1879,7 +1879,7 @@
             renderDashboard();
             showToast(`Loaded ${file.name} successfully`);
           } else {
-            alert('Invalid JSON structure: Expected Vangaurd-api report or history format.');
+            alert('Invalid JSON structure: Expected VANGAURD-API report or history format.');
           }
         } catch (err) {
           alert('Error parsing JSON file: ' + err.message);
@@ -1924,7 +1924,7 @@
         if (scan.findings && scan.findings.length > 0) {
           reportData = {
             scan_metadata: {
-              scanner: 'Vangaurd-api v1.0.0',
+              scanner: 'VANGAURD-API v1.0.0',
               target_base_url: scan.target_base_url,
               target_spec_title: scan.target_spec_title,
               timestamp: scan.timestamp,
