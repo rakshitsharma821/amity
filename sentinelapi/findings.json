@@ -3,7 +3,7 @@
     "scanner": "SentinelAPI v1.0.0",
     "target_base_url": "http://localhost:4000",
     "target_spec_title": "SentinelAPI Vulnerable Test Target",
-    "timestamp": "2026-09-25T01:54:34.177187+00:00",
+    "timestamp": "2026-09-25T02:01:37.374754+00:00",
     "duration_seconds": 0.38,
     "total_findings": 5,
     "severity_counts": {
