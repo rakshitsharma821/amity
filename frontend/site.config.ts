@@ -39,21 +39,21 @@ export interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-  name: 'Vanguarda-api',
-  legalName: 'Vanguarda-api Technologies Inc.',
+  name: 'Vangaurd-api',
+  legalName: 'Vangaurd-api Technologies Inc.',
   tagline: 'Find the API vulnerability before the breach headline does.',
   description:
     'Production-grade, zero-trust API security platform. Discover Broken Object Level Authorization (BOLA), unmasked credential leaks, and missing rate limits from your OpenAPI contracts before attackers do.',
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://vanguarda-api.io',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://vangaurd-api.io',
   links: {
-    github: 'https://github.com/vanguarda-api/vanguarda-api',
-    twitter: 'https://twitter.com/vanguarda_api',
-    discord: 'https://discord.gg/vanguarda-api',
+    github: 'https://github.com/vangaurd-api/vangaurd-api',
+    twitter: 'https://twitter.com/vangaurd_api',
+    discord: 'https://discord.gg/vangaurd-api',
     docs: '/docs',
   },
   contact: {
-    email: 'hello@vanguarda-api.io',
-    securityEmail: 'security@vanguarda-api.io',
+    email: 'hello@vangaurd-api.io',
+    securityEmail: 'security@vangaurd-api.io',
   },
   navigation: [
     { label: 'Features', href: '/features' },
@@ -74,17 +74,17 @@ export const siteConfig: SiteConfig = {
       { label: 'Getting Started Guide', href: '/docs' },
       { label: 'OpenAPI Spec Format', href: '/docs#openapi' },
       { label: 'Verification Protocol', href: '/docs#verification' },
-      { label: 'GitHub Repository', href: 'https://github.com/vanguarda-api/vanguarda-api', external: true },
+      { label: 'GitHub Repository', href: 'https://github.com/vangaurd-api/vangaurd-api', external: true },
     ],
     legal: [
       { label: 'Privacy Policy', href: '/privacy' },
       { label: 'Terms of Service', href: '/terms' },
       { label: 'Acceptable Use Policy', href: '/acceptable-use' },
-      { label: 'Security Disclosures', href: 'mailto:security@vanguarda-api.io' },
+      { label: 'Security Disclosures', href: 'mailto:security@vangaurd-api.io' },
     ],
   },
   beta: {
     isPublicBeta: true,
-    bannerText: 'Vanguarda-api is currently in Free Public Beta for authorized engineering teams.',
+    bannerText: 'Vangaurd-api is currently in Free Public Beta for authorized engineering teams.',
   },
 };

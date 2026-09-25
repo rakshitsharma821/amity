@@ -42,7 +42,7 @@ export default function NotFound() {
               <div className="w-2.5 h-2.5 rounded-full bg-warn-amber" />
               <div className="w-2.5 h-2.5 rounded-full bg-terminal" />
             </div>
-            <span className="text-[11px] text-muted-body ml-2">vanguarda@router:~</span>
+            <span className="text-[11px] text-muted-body ml-2">vangaurd@router:~</span>
           </div>
           <span className="text-[10px] text-alert-red font-bold">STATUS 404</span>
         </div>
@@ -63,9 +63,9 @@ export default function NotFound() {
           </div>
 
           <div className="p-4 rounded-lg bg-black/60 border border-white/10 text-xs text-muted-dim space-y-1">
-            <div><span className="text-terminal">$</span> curl -I https://vanguarda-api.io/path</div>
+            <div><span className="text-terminal">$</span> curl -I https://vangaurd-api.io/path</div>
             <div className="text-alert-red">HTTP/2 404 Not Found</div>
-            <div>server: vanguarda-edge-proxy</div>
+            <div>server: vangaurd-edge-proxy</div>
           </div>
 
           <Link

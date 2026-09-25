@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 const BOOT_LINES = [
-  'initializing vanguarda-api core v3.2.0...',
+  'initializing vangaurd-api core v3.2.0...',
   'mounting zero-trust authorization pipeline...',
   'ingesting openapi 3.0 contract parser...',
   'threat map active. telemetry calibrated.',
@@ -88,7 +88,7 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
               <div className="w-2.5 h-2.5 rounded-full bg-warn-amber/80" />
               <div className="w-2.5 h-2.5 rounded-full bg-terminal/80" />
             </div>
-            <span className="text-[11px] text-muted-body ml-2">vanguarda@soc-terminal:~</span>
+            <span className="text-[11px] text-muted-body ml-2">vangaurd@soc-terminal:~</span>
           </div>
           <button
             type="button"
@@ -119,7 +119,7 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
 
         {/* Telemetry footer */}
         <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] text-muted-dim">
-          <span className="text-terminal font-bold">VANGUARDA-API SOC V3.2</span>
+          <span className="text-terminal font-bold">VANGAURD-API SOC V3.2</span>
           <span>BOOT SEQUENCE (&lt;1s)</span>
         </div>
       </div>

@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: `${siteConfig.name} — ${siteConfig.tagline}`,
     description: siteConfig.description,
     images: ['/og-image.png'],
-    creator: '@vanguarda_api',
+    creator: '@vangaurd_api',
   },
   robots: {
     index: true,
